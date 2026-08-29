@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.local/schemas/ledger-event.schema.json",
+  "title": "LedgerEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sequence", "kind", "occurred_at", "actor", "payload", "previous_hash", "event_hash"],
+  "properties": {
+    "sequence": {"type": "integer", "minimum": 0},
+    "kind": {"enum": ["object_recorded", "status_transitioned", "relation_recorded", "artifact_attached"]},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "actor": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"},
+    "previous_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "event_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

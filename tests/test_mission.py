@@ -22,7 +22,10 @@ class MissionSpecTests(unittest.TestCase):
 
     def test_json_schema_documents_are_valid_json(self):
         schemas = sorted(SCHEMA_DIR.glob("*.schema.json"))
-        self.assertEqual({path.name for path in schemas}, {"mission.schema.json", "research-object.schema.json"})
+        self.assertEqual(
+            {path.name for path in schemas},
+            {"ledger-event.schema.json", "mission.schema.json", "research-object.schema.json"},
+        )
         for path in schemas:
             schema = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
