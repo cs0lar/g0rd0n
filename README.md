@@ -22,6 +22,11 @@ python -m unittest discover -s tests -v
 python -m g0rd0n validate config/mission.json
 ```
 
+Phase 02 adds a dependency-free, hash-chained research ledger in
+`g0rd0n/research/`. It rebuilds state from immutable JSONL events and keeps raw
+evidence in a content-addressed artifact directory; see
+`docs/research-ledger.md` for its invariants and usage model.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
