@@ -11,10 +11,15 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phase 0 (Skeleton and Constitution) is built; Phase 1 (the Ledger) is next.** The package
-is `src/g0rd0n/` with two modules — `config.py` (the only reader of the config file) and
-`cli.py` (`version`, `config`, `doctor`, and nothing else). Nothing spends anything yet,
-because the Ledger does not exist, and no model is called until spending it can be priced.
+**Phases 0–1 are built; Phase 2 (the Kernel Bridge) is next.** The package is `src/g0rd0n/`:
+
+- `config.py` — the only reader of the config file.
+- `cli.py` — `version`, `config`, `doctor`, `cost`, and nothing else.
+- `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
+  and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
+  (the derived view). Depends on `config` and nothing else in `g0rd0n`.
+
+Nothing calls a model yet. Phase 1 built the machine that prices work, not work to price.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
 `main`. (`feature/gpt` is a parallel implementation of the same AGENTS.md; do not merge
@@ -50,8 +55,18 @@ Two consequences that catch people out:
 - **`operating_cost` vs `target_energy`** are both joules and are never the same thing. The
   first is what g0rd0n spends; the second is a measured property of a candidate paradigm under
   evaluation. Never budget against `target_energy`; never report `operating_cost` as a result.
-- **Priced-before-run.** `ledger.reserve(...)` happens before the call, never after. This is
-  an invariant with a test, not a convention.
+- **Priced-before-run.** `ledger.reserve(...)` happens before the call, never after. Enforced
+  by the API's shape, not by a rule to remember: `spend` and `settle` take a `Reservation`,
+  and `reserve` is the only thing that makes one. Do not add a fourth `Ledger` operation, and
+  do not add a `spend` overload taking a bare wager id — `no_priced_call_without_a_reservation`
+  pins that surface deliberately.
+
+Two more things about the ledger, both load-bearing:
+
+- **Write to the journal before believing a total.** `Ledger._append` is called before the
+  in-memory accumulator moves. Durable-before-visible, applied to money.
+- **Overspend is checked in every dimension**, not just `usd` — an estimate right about money
+  and wrong about a person's time is still wrong. Caps, by contrast, are dollars only.
 
 ## Layering
 

@@ -34,6 +34,7 @@ class Config:
     kernel_storage_root: Path
     kernel_mcp_server: Path
     vault_root: Path
+    ledger_journal: Path
     session_usd: float
     campaign_usd: float
     standing_usd: float
@@ -46,6 +47,7 @@ class Config:
 KNOWN_KEYS: dict[str, frozenset[str]] = {
     "kernel": frozenset({"storage_root", "mcp_server"}),
     "vault": frozenset({"root"}),
+    "ledger": frozenset({"journal"}),
     "budget": frozenset({"session_usd", "campaign_usd", "standing_usd"}),
     "network": frozenset({"allowlist"}),
 }
@@ -71,6 +73,7 @@ def load(path: Path) -> Config:
         kernel_storage_root=_path(raw, "kernel", "storage_root"),
         kernel_mcp_server=_path(raw, "kernel", "mcp_server"),
         vault_root=_path(raw, "vault", "root"),
+        ledger_journal=_path(raw, "ledger", "journal"),
         session_usd=_usd(raw, "budget", "session_usd"),
         campaign_usd=_usd(raw, "budget", "campaign_usd"),
         standing_usd=_usd(raw, "budget", "standing_usd"),

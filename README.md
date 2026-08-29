@@ -30,10 +30,14 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 0 — Skeleton and Constitution.** The repository does nothing yet, on purpose. It can
-tell you what it is, what it was configured with, and what it is missing. It cannot spend
-anything, because the Ledger (Phase 1) does not exist, and no model is called until spending
-it can be priced and every claim it makes can be attributed.
+**Phase 1 — The Ledger.** `g0rd0n` can now price and account for work it has not yet learned
+to do. It cannot do any of that work: no model is called until spending it can be priced and
+every claim it makes can be attributed, and the kernel bridge (Phase 2) does not exist yet.
+
+Every dollar is reserved against exactly one claim *before* the work starts, spent against
+that reservation or not at all, and settled into an append-only journal that every total is
+derived from. Three caps — session, campaign, standing — stop a run where it said it would
+stop, settling cleanly rather than crashing.
 
 ## Quickstart
 
@@ -44,7 +48,22 @@ uv sync
 uv run g0rd0n version
 uv run g0rd0n config     # what was loaded, after path expansion
 uv run g0rd0n doctor     # what is missing, and what to do about it
+uv run g0rd0n cost       # what was spent, and on which claim
 ```
+
+`cost` answers before anything has been spent, which is the point:
+
+```
+$ g0rd0n cost --by wager
+wager                   n    reserved       spent           tokens
+w-001-tc0-depth         2      $3.500      $2.370       50200→6300
+w-002-landauer-check    1      $1.000      $0.310         8800→900
+------------------------------------------------------------------
+TOTAL                   3      $4.500      $2.680       59000→7200
+```
+
+Group by `wager`, `phase`, `agent`, or `day`. Every number is recomputed from the journal, so
+the report cannot drift from the record — there is no stored total for it to disagree with.
 
 `doctor` exits non-zero on a machine where the kernel or the vault is not set up — which is
 every machine, until you edit [`config/g0rd0n.toml`](config/g0rd0n.toml) and create them.
