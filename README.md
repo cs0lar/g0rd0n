@@ -31,6 +31,10 @@ Phase 03 adds the replaceable `KnowledgeStore` boundary under
 `g0rd0n/knowledge/`, with contract-equivalent in-memory and `knk` MCP adapters.
 See `docs/knowledge-store.md` for the supported temporal assertion model.
 
+Phase 04 adds a deterministic Obsidian projection in `g0rd0n/projection/`.
+Generated notes preserve explicit human-owned regions, use stable wikilinks, and
+copy hash-verified evidence into the vault; see `docs/obsidian-projection.md`.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
