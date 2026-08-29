@@ -67,6 +67,11 @@ data over a shared backend while candidate deduplication, competing explanations
 cheap falsifiers, evidence-weight updates, replication, and stopping rules make
 hypothesis promotion explicitly resistant to confirmation bias.
 
+Phase 12 adds checkpointed adaptive resource topology under `g0rd0n/governor/`.
+It learns progress per total cost by workload family, activates or reuses useful
+resources, retires consistently poor ones, and compares itself with fixed
+scheduling on held-out paired workloads.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
