@@ -1,0 +1,28 @@
+# g0rd0n
+
+`g0rd0n` is a scientific research system for finding and testing computable
+cognitive architectures under explicit capability, learning, resource, and
+energy bounds. The project treats resource-bounded separation—not unrestricted
+computability—as its default interpretation of “more powerful.”
+
+## Phase 01
+
+This phase defines the falsifiable contract on which later orchestration will
+depend:
+
+- `config/mission.json` is the canonical, machine-readable mission.
+- `g0rd0n/core/` contains dependency-free typed models and validation.
+- `schemas/` documents the stable JSON shapes for research objects.
+- `docs/` records vocabulary, baseline families, and decision rationale.
+
+Validate the current phase with:
+
+```bash
+python -m unittest discover -s tests -v
+python -m g0rd0n validate config/mission.json
+```
+
+The contract intentionally makes failure possible. A candidate is not promoted
+unless it is executable, evaluated across heterogeneous task families, strictly
+better than named baselines under a declared resource bound, energy-accounted,
+and paired with observations that would falsify it.

@@ -1,0 +1,76 @@
+{
+  "id": "mission.g0rd0n.v1",
+  "question": "Does there exist a computable cognitive architecture with a strict capability advantage over defined DNN or Transformer baselines under explicit resource bounds, with a credible path to approximately 20 W continuous operation?",
+  "interpretation": "resource_bounded_separation",
+  "target_continuous_power_watts": 20,
+  "baselines": [
+    {
+      "id": "transformer_baseline",
+      "family": "transformer",
+      "version_policy": "Pin model, implementation, weights, tokenizer, and revision per experiment.",
+      "reproducibility_requirements": ["model_revision", "weights_digest", "hardware", "software_environment", "seed", "resource_accounting"]
+    },
+    {
+      "id": "dnn_baseline",
+      "family": "recurrent_neural_network",
+      "version_policy": "Select a task-appropriate strong non-Transformer neural baseline and pin its full configuration.",
+      "reproducibility_requirements": ["architecture", "weights_digest", "training_protocol", "hardware", "seed", "resource_accounting"]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "computable",
+      "description": "The candidate has executable operational semantics or a reduction to a known computable model.",
+      "dimension": "computability",
+      "verification": "formal_check",
+      "indicator": "Executable reference implementation or checkable reduction artifact",
+      "threshold": "At least one independent replay completes on a finite input",
+      "falsifier": "No finite operational semantics or computable reduction can be specified"
+    },
+    {
+      "id": "general",
+      "description": "The candidate transfers across heterogeneous pre-registered task families.",
+      "dimension": "generality",
+      "verification": "measurement",
+      "indicator": "Held-out performance across at least three heterogeneous task families",
+      "threshold": "Meets every pre-registered family threshold without candidate-specific retraining",
+      "falsifier": "Competence remains confined to one task family or relies on test contamination"
+    },
+    {
+      "id": "strict_advantage",
+      "description": "The candidate establishes a strict separation against named reproducible baselines.",
+      "dimension": "complexity",
+      "verification": "formal_check",
+      "indicator": "Checked bound, verified algorithmic result, or pre-registered Pareto analysis",
+      "threshold": "Strictly improves at least one declared resource without violating capability constraints",
+      "falsifier": "The advantage disappears under matched resources, stronger baselines, or replication"
+    },
+    {
+      "id": "energy_path",
+      "description": "The candidate has bounded energy accounting and an explicit scaling path.",
+      "dimension": "physical_realizability",
+      "verification": "measurement",
+      "indicator": "Idle, active, average power and joules per task at a declared system boundary",
+      "threshold": "Measured or uncertainty-bounded model supports a route to 20 W continuous operation",
+      "falsifier": "Whole-system scaling cannot approach 20 W without losing required capability"
+    },
+    {
+      "id": "falsifiable",
+      "description": "The candidate declares observations that cause rejection or downgrade.",
+      "dimension": "learnability",
+      "verification": "formal_check",
+      "indicator": "Pre-registered, operational candidate-specific falsifiers",
+      "threshold": "Every promoted claim has at least one executable or formally checkable falsifier",
+      "falsifier": "A claim remains compatible with every possible observation"
+    }
+  ],
+  "glossary": [
+    {"term": "computability", "definition": "Whether a behaviour can be produced by a finite effective procedure.", "excludes": ["complexity", "efficiency"]},
+    {"term": "complexity", "definition": "Resources required by an algorithm as its input or task scale changes.", "excludes": ["computability", "learnability"]},
+    {"term": "learnability", "definition": "Resources and evidence required to acquire a target behaviour.", "excludes": ["generality", "autonomy"]},
+    {"term": "generality", "definition": "Breadth of competence and transfer across heterogeneous task families.", "excludes": ["autonomy", "computability"]},
+    {"term": "autonomy", "definition": "Ability to continue selecting actions and learning with bounded external intervention.", "excludes": ["generality", "efficiency"]},
+    {"term": "efficiency", "definition": "Useful capability delivered per declared unit of resource.", "excludes": ["computability", "physical_realizability"]},
+    {"term": "physical_realizability", "definition": "Whether a computation can plausibly be embodied within declared physical constraints.", "excludes": ["computability", "complexity"]}
+  ]
+}
