@@ -57,6 +57,11 @@ idle/active power, per-task and per-update energy, energy-delay product,
 uncertainty-bearing projections, synthetic meters, and optional Linux RAPL
 package measurement. Energy Pareto comparisons reject mismatched boundaries.
 
+Phase 10 adds executable candidate descriptions under `g0rd0n/paradigms/`.
+Typed `ParadigmSpec` documents architecture, assumptions, claims, energy
+hypotheses, and falsifiers while a common runner and benchmark adapter keep the
+evaluation harness paradigm-neutral.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,

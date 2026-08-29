@@ -1,0 +1,27 @@
+{
+  "id": "toy-graph-rewrite-parity-v1",
+  "version": "1",
+  "runner": "builtin:graph_rewrite_parity",
+  "primitives": ["symbol node", "deletion rewrite", "pair-cancellation rewrite"],
+  "state": ["ordered symbol graph"],
+  "memory": ["materialized input graph"],
+  "learning_rule": "No learning; rewrite rules are declared.",
+  "inference_rule": "Delete zero nodes, then cancel pairs of one nodes.",
+  "communication": "Ordered binary node list in; residual graph cardinality out.",
+  "adaptation": "None in this harness-validation paradigm.",
+  "hardware_assumptions": ["Mutable ordered graph storage is available."],
+  "complexity_claims": [
+    {
+      "resource": "rewrite steps",
+      "bound": "at most one deletion per zero plus one cancellation per pair of ones",
+      "assumptions": ["Inputs are binary."]
+    }
+  ],
+  "energy_hypothesis": "Graph materialization likely costs more memory movement than one-bit state; this is unmeasured.",
+  "falsifiers": [
+    {
+      "observation": "A fully reduced graph has more than one node.",
+      "consequence": "Reject the declared rewrite system for parity."
+    }
+  ]
+}

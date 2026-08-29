@@ -30,6 +30,7 @@ class MissionSpecTests(unittest.TestCase):
                 "energy-profile.schema.json",
                 "ledger-event.schema.json",
                 "mission.schema.json",
+                "paradigm-spec.schema.json",
                 "research-object.schema.json",
                 "resource.schema.json",
             },
