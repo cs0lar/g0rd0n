@@ -48,6 +48,10 @@ improves questions, tests competing hypotheses with cheap discriminating
 experiments, preserves evidence, updates statuses, and makes explicit
 stop/continue/escalate decisions through budgeted resources.
 
+Phase 08 adds the baseline laboratory under `g0rd0n/evaluation/`: pinned
+manifests, seeded benchmark execution, environment/resource capture, paired
+statistics, Pareto reporting, and a one-command toy reproduction example.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,

@@ -25,6 +25,7 @@ class MissionSpecTests(unittest.TestCase):
         self.assertEqual(
             {path.name for path in schemas},
             {
+                "baseline-manifest.schema.json",
                 "budget.schema.json",
                 "ledger-event.schema.json",
                 "mission.schema.json",
