@@ -35,6 +35,10 @@ Phase 04 adds a deterministic Obsidian projection in `g0rd0n/projection/`.
 Generated notes preserve explicit human-owned regions, use stable wikilinks, and
 copy hash-verified evidence into the vault; see `docs/obsidian-projection.md`.
 
+Phase 05 adds the uniform resource registry and invocation boundary under
+`g0rd0n/resources/`, including permissions, rate limits, timeout/cancellation,
+context validation, deterministic fakes, and attributable per-invocation costs.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,

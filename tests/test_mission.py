@@ -24,7 +24,12 @@ class MissionSpecTests(unittest.TestCase):
         schemas = sorted(SCHEMA_DIR.glob("*.schema.json"))
         self.assertEqual(
             {path.name for path in schemas},
-            {"ledger-event.schema.json", "mission.schema.json", "research-object.schema.json"},
+            {
+                "ledger-event.schema.json",
+                "mission.schema.json",
+                "research-object.schema.json",
+                "resource.schema.json",
+            },
         )
         for path in schemas:
             schema = json.loads(path.read_text(encoding="utf-8"))
