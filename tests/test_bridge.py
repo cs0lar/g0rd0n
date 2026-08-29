@@ -84,8 +84,8 @@ def test_conflicting_claims_are_surfaced_not_silently_reconciled(bridge: Bridge)
 
     knk's `find_conflicts` considers `Active` assertions only, so it reports nothing while
     every claim g0rd0n writes is a `Hypothesis` — asserted here so the day that changes, this
-    test says so. Detecting hypothesis-level disagreement in g0rd0n instead would be a
-    workaround for a kernel question. See ADR 0003.
+    test says so. That is by design: a conflict is two things believed that cannot both be
+    true, which first becomes possible at promotion. See AGENTS.md §Phase 2 and ADR 0003.
     """
     subject = Ref("hypothesis", "h-spiking-beats-transformer")
     first = bridge.hypothesise(

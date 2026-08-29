@@ -177,12 +177,11 @@ class Bridge:
         dropping the older all destroy the most interesting thing in the record.
 
         A faithful pass-through to knk's `find_conflicts`, which considers **`Active`
-        assertions only**. Since every claim g0rd0n writes today is a `Hypothesis`, this
-        returns nothing until Phase 10 promotes something — and rival hypotheses are arguably
-        not a conflict at all, but the ordinary state of an open question. Detecting
-        hypothesis-level disagreement here instead would be a workaround in g0rd0n for a
-        kernel question, which AGENTS.md forbids: a missing kernel operation is an issue filed
-        against knk. See ADR 0003.
+        assertions only**. Since every claim g0rd0n writes is a `Hypothesis`, this returns
+        nothing until Phase 10 promotes something, and that is by design rather than a gap:
+        rival hypotheses are not a conflict, they are the ordinary state of an open question.
+        A conflict is two things *believed* that cannot both be true, so Phase 10 is this
+        method's first real caller. See AGENTS.md §Phase 2 and ADR 0003.
         """
         return _assertions(
             self._client.call(
