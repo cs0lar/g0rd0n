@@ -1,0 +1,27 @@
+{
+  "id": "toy-event-parity-v1",
+  "version": "1",
+  "runner": "builtin:event_parity",
+  "primitives": ["binary event", "conditional state transition"],
+  "state": ["one parity bit"],
+  "memory": ["current parity only"],
+  "learning_rule": "No learning; transition rule is declared.",
+  "inference_rule": "Toggle state only for non-zero events.",
+  "communication": "Ordered binary event stream in; one parity bit out.",
+  "adaptation": "None in this harness-validation paradigm.",
+  "hardware_assumptions": ["Conditional event processing is available."],
+  "complexity_claims": [
+    {
+      "resource": "state transitions",
+      "bound": "one transition per non-zero input",
+      "assumptions": ["Inputs are binary and delivered in order."]
+    }
+  ],
+  "energy_hypothesis": "Sparse zero inputs may avoid switching energy; this is unmeasured.",
+  "falsifiers": [
+    {
+      "observation": "The runner transitions state for a zero input.",
+      "consequence": "Reject the claimed event sparsity implementation."
+    }
+  ]
+}
