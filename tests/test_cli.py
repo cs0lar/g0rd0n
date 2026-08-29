@@ -175,7 +175,8 @@ def test_dry_run_is_accepted_and_changes_nothing_yet(tmp_path: Path) -> None:
 
 def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
     """Phase 0's review checklist, still asked. Each phase widens this line deliberately."""
-    assert set(cli.COMMANDS) == {"version", "doctor", "config", "cost"}
+    assert set(cli.COMMANDS) == {"version", "doctor", "config", "cost", "vault"}
+    assert cli.VAULT_ACTIONS == ("rebuild",)
 
 
 def test_no_command_is_a_usage_error() -> None:

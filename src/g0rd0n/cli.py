@@ -1,8 +1,9 @@
 """The command line: the only place that reads a config file and the only place that exits.
 
-Four commands, and no more. `version` says what is installed, `config` says what was loaded,
-`doctor` says what is missing, `cost` says what was spent and on which claim. None of them
-spends anything: Phase 1 builds the machine that prices work, not work to price.
+Five commands, and no more. `version` says what is installed, `config` says what was loaded,
+`doctor` says what is missing, `cost` says what was spent and on which claim, and `vault`
+rebuilds the projection. None of them spends anything: the phases so far build the machine
+that prices work, not work to price.
 
 This is also the one place a `BudgetExhausted` is caught. Everywhere else it propagates, so
 that `open_session` can settle what is open on its way past.
@@ -20,10 +21,13 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import NamedTuple
 
-from g0rd0n import __version__
+from g0rd0n import __version__, vault
 from g0rd0n.config import Config, ConfigError, load
+from g0rd0n.kernel import KernelError
+from g0rd0n.kernel import connect as connect_kernel
 from g0rd0n.ledger import BudgetExhausted, JournalError, LedgerError
 from g0rd0n.ledger import report as cost_report
+from g0rd0n.vault import VaultError
 
 DEFAULT_CONFIG = Path("config/g0rd0n.toml")
 
@@ -35,7 +39,12 @@ COMMANDS: dict[str, str] = {
     "doctor": "check that the kernel, the vault, and the config are where they claim to be",
     "config": "print the resolved configuration",
     "cost": "report what has been spent, and on which claim",
+    "vault": "rebuild the Obsidian vault as a projection of the kernel",
 }
+
+#: `vault` takes exactly one action today. It is spelled out rather than implied so that
+#: `g0rd0n vault` on its own is an error with a list, not a rebuild nobody asked for.
+VAULT_ACTIONS = ("rebuild",)
 
 
 class Check(NamedTuple):
@@ -78,9 +87,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help=(
-            "price the work without doing it or recording it. No command spends anything "
-            "yet, so today this changes nothing; it takes effect with the first cell "
-            "(Phase 4)."
+            "price the work without doing it or recording it. Nothing spends money yet, so "
+            "today this only affects `vault rebuild`, which reads and compares but writes "
+            "nothing; it takes effect for spend with the first cell (Phase 4)."
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
@@ -92,6 +101,12 @@ def build_parser() -> argparse.ArgumentParser:
                 choices=cost_report.BY,
                 default="wager",
                 help="what to group spend by (default: wager)",
+            )
+        if name == "vault":
+            subparser.add_argument(
+                "action",
+                choices=VAULT_ACTIONS,
+                help="drop the vault and project it again from the kernel",
             )
     return parser
 
@@ -124,6 +139,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "cost":
             print(cost_report.read(config.ledger_journal, args.by))
             return 0
+        if args.command == "vault":
+            return _vault(config, dry_run=args.dry_run)
         return _report(doctor(config))
     except BudgetExhausted as exc:
         print(f"budget: {exc}", file=sys.stderr)
@@ -131,6 +148,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (LedgerError, JournalError) as exc:
         print(f"ledger: {exc}", file=sys.stderr)
         return 1
+    except VaultError as exc:
+        print(f"vault: {exc}", file=sys.stderr)
+        return 1
+    except KernelError as exc:
+        print(f"kernel: {exc}", file=sys.stderr)
+        return 1
+
+
+def _vault(config: Config, *, dry_run: bool) -> int:
+    """Rebuild the vault, saying what it is about to overwrite before it does.
+
+    `--dry-run` reads the kernel and compares, and writes nothing: the way to find out what a
+    rebuild would cost you in hand-edits without paying it.
+    """
+    with connect_kernel(config) as bridge:
+        done = vault.rebuild(bridge, config.vault_root, dry_run=dry_run)
+
+    for line in done.edits.describe():
+        print(f"warning: {line}", file=sys.stderr)
+    if done.edits:
+        print(
+            f"warning: {len(done.edits.describe())} hand-edited or unexpected files"
+            + (" would be lost" if dry_run else " were overwritten")
+            + "; prose that should last belongs in the kernel first.",
+            file=sys.stderr,
+        )
+
+    verb = "would write" if dry_run else "wrote"
+    print(f"{verb} {done.notes} files to {config.vault_root}")
+    return 0
 
 
 def _directory(name: str, path: Path) -> Check:

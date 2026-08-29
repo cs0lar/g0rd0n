@@ -30,9 +30,9 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 2 — The Kernel Bridge.** `g0rd0n` can price work it has not learned to do, and
-remember what it is told with a source attached. It still calls no model: the cell runtime is
-Phase 4.
+**Phase 3 — The Vault.** `g0rd0n` can price work it has not learned to do, remember what it
+is told with a source attached, and show that memory to a human as a navigable argument. It
+still calls no model: the cell runtime is Phase 4.
 
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is
@@ -44,6 +44,13 @@ one of twelve predicates and no others, and lands as a `Hypothesis` — there is
 commit a believed assertion, because promotion needs a settled Wager, a survived attack, and a
 human key, and none of those exist yet.
 
+The Obsidian vault is a **derived projection** and never a source of truth. `g0rd0n vault
+rebuild` drops it and regenerates it from the kernel, byte for byte identically every time,
+so the prose a human reads and the record the machine keeps cannot drift apart. Refuted
+claims stay, with their refutation on the note. Hand-edits are welcome and do not survive a
+rebuild — it says which files it is about to overwrite before it does, and `--dry-run` asks
+without paying.
+
 ## Quickstart
 
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
@@ -54,6 +61,9 @@ uv run g0rd0n version
 uv run g0rd0n config     # what was loaded, after path expansion
 uv run g0rd0n doctor     # what is missing, and what to do about it
 uv run g0rd0n cost       # what was spent, and on which claim
+
+uv run g0rd0n vault rebuild              # project the kernel into Obsidian
+uv run g0rd0n --dry-run vault rebuild    # ...and what that would overwrite
 ```
 
 `cost` answers before anything has been spent, which is the point:
