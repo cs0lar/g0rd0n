@@ -62,6 +62,11 @@ Typed `ParadigmSpec` documents architecture, assumptions, claims, energy
 hypotheses, and falsifiers while a common runner and benchmark adapter keep the
 evaluation harness paradigm-neutral.
 
+Phase 11 adds an adversarial science loop under `g0rd0n/governor/`. Roles remain
+data over a shared backend while candidate deduplication, competing explanations,
+cheap falsifiers, evidence-weight updates, replication, and stopping rules make
+hypothesis promotion explicitly resistant to confirmation bias.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
