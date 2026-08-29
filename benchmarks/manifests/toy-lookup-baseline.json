@@ -1,0 +1,43 @@
+{
+  "id": "toy-lookup-baseline-v1",
+  "family": "toy_lookup",
+  "role": "baseline",
+  "implementation": "g0rd0n.evaluation.toy.LookupBaseline",
+  "implementation_version": "1",
+  "model_revision": "lookup-v1",
+  "weights_digest": null,
+  "runner": "builtin:toy_lookup",
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "benchmark": {
+    "id": "toy-affine-extrapolation",
+    "version": "1",
+    "task_family": "algorithmic_generalization",
+    "generality_rationale": "Tests whether behavior extrapolates a learned rule outside the finite training domain.",
+    "known_shortcuts": ["The affine task family is trivially identifiable from two noiseless examples."],
+    "contamination_risk": "None: cases are generated locally from a declared formula and are used only for harness validation.",
+    "primary_metric": "accuracy",
+    "higher_is_better": true,
+    "stage": "harness_validation"
+  },
+  "hardware": {
+    "architecture": "portable Python model",
+    "processor": "not hardware-dependent",
+    "logical_cpu_count": 1,
+    "accelerator": null,
+    "memory_bytes": null
+  },
+  "environment": {
+    "operating_system": "portable",
+    "python_version": ">=3.12",
+    "dependencies": [],
+    "environment_variables": []
+  },
+  "reproduction": {
+    "command": ["python", "-m", "g0rd0n.evaluation", "run", "benchmarks/manifests/toy-lookup-baseline.json"],
+    "source_revision": "manifest-owning-git-revision",
+    "container_image": null,
+    "container_digest": null
+  },
+  "training_data": "Integers 0 through 7 mapped by y = 2x + 1; no learned parameters beyond the lookup table.",
+  "energy_boundary": "No energy claim: deterministic operation counts and modelled latency only; whole-system energy is not measured."
+}
