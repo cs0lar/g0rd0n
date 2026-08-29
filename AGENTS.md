@@ -244,15 +244,22 @@ command, before the system has ever done anything?
   source entity and the extraction method. Unsourced commits are rejected at the bridge.
 - Machine-suggested claims use `commit_hypothesis`, never `commit`. Promotion to `Active`
   happens only through Phase 10's referee.
-- `find_conflicts` is polled after every ingestion pass; conflicts are surfaced, never
-  auto-resolved.
+- `find_conflicts` is exposed by the bridge and never acted on: conflicts are surfaced,
+  never auto-resolved. It reports on `Active` assertions only, so it says nothing while
+  everything g0rd0n commits is a `Hypothesis`. **This is correct, not a gap.** Two rival
+  hypotheses are not a conflict; they are the ordinary state of an open question, and the
+  candidate portfolio is made of them. A conflict is two things *believed* that cannot both
+  be true, so conflict detection becomes load-bearing at promotion (Phase 10) — the first
+  moment two claims can both be believed. See `docs/adr/0003`.
 
 **Minimum tests:**
 
 - `unsourced_claim_is_rejected_at_the_bridge`
 - `predicate_outside_the_closed_vocabulary_is_rejected`
 - `machine_suggested_claims_land_as_hypothesis_status`
-- `conflicting_claims_are_surfaced_not_silently_reconciled`
+- `conflicting_claims_are_surfaced_not_silently_reconciled` — both claims persist with their
+  own id, confidence, and provenance; nothing is averaged, preferred for being newer, or
+  dropped. This is the half g0rd0n owns, and it is checkable before anything is promoted.
 - `bridge_survives_kernel_subprocess_restart`
 
 ### Phase 3 — The Vault
@@ -338,15 +345,18 @@ notification.
   retrievable artifact is a hard failure**, not a low-confidence claim. Fabricated
   references are the single most damaging failure mode available to this system, and the
   gate against them is mechanical: resolve, fetch, hash, or discard.
-- Deduplication against existing assertions; contradictions raised through `find_conflicts`
-  and routed to the referee rather than averaged away.
+- Deduplication against existing assertions. Two sources that disagree are recorded as
+  competing hypotheses, each keeping its own confidence and provenance, and routed to the
+  referee rather than averaged away. Among hypotheses, disagreement is the expected state
+  and is preserved; `find_conflicts` speaks for the promoted set, not for this one (Phase 2).
 - First job: verify or retract the seed numbers in "The Question" above.
 
 **Minimum tests:**
 
 - `unresolvable_citation_fails_the_ingestion_run`
 - `duplicate_claim_from_a_second_source_raises_confidence_and_records_both_sources`
-- `contradictory_claims_produce_a_conflict_record`
+- `contradictory_claims_produce_a_conflict_record` — the record being the competing
+  hypotheses themselves, both retained with their sources, not a `find_conflicts` result
 - `seed_claims_are_retracted_when_the_source_disagrees`
 
 ### Phase 7 — The Wager and the Allocator
@@ -431,12 +441,17 @@ not been made.
   attempt, and a human sign-off. Three keys, and the human key is never automatable.
 - Failed attacks are recorded too. "We tried to kill this and could not, here is how" is
   the actual evidence, and it is worth more than the promotion itself.
+- This is where `find_conflicts` starts to matter. Promotion is the first moment two claims
+  can both be *believed*, so it is the first moment two of them can be inconsistent. A
+  promotion that would put an `Active` assertion into conflict with an existing one is
+  blocked and surfaced to the human key — never auto-resolved, in either direction.
 
 **Minimum tests:**
 
 - `promotion_requires_all_three_keys`
 - `failed_falsification_attempt_is_recorded_as_evidence`
 - `referee_budget_is_isolated_from_the_candidate_it_attacks`
+- `promotion_into_a_conflict_with_an_active_assertion_is_blocked`
 
 ### Phase 11 — The Cockpit
 
