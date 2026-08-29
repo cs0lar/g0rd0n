@@ -163,7 +163,7 @@ say so in the PR description; the phase numbering tolerates `4a`/`4b`.
 Ordering rationale: the first four PRs build the parts that make everything else
 auditable (money, memory, projection, execution). No model is called until spending it can
 be priced and every claim it makes can be attributed. This is deliberate and is not
-negotiable for schedule reasons.
+negotiable for schedule reasons. The root branch for this project is `feature/claude` and every PR must target this branch.
 
 ### Phase 0 — Skeleton and Constitution
 
