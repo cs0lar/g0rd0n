@@ -62,6 +62,9 @@ def kernel_config(knk_server: Path, tmp_path: Path) -> Config:
         campaign_usd=50.0,
         standing_usd=500.0,
         network_allowlist=("arxiv.org",),
+        model_endpoint="https://api.anthropic.com/v1/messages",
+        model_api_key_file=tmp_path / "anthropic-key",
+        model_prices=(),
     )
 
 

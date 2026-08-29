@@ -30,9 +30,9 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 3 — The Vault.** `g0rd0n` can price work it has not learned to do, remember what it
-is told with a source attached, and show that memory to a human as a navigable argument. It
-still calls no model: the cell runtime is Phase 4.
+**Phase 4a — The Cell Runtime.** `g0rd0n` can price work, remember it with a source attached,
+show it to a human as a navigable argument, and — as of this phase — actually run an agent.
+Cell composition and human cells are 4b.
 
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is
@@ -65,6 +65,16 @@ uv run g0rd0n cost       # what was spent, and on which claim
 uv run g0rd0n vault rebuild              # project the kernel into Obsidian
 uv run g0rd0n --dry-run vault rebuild    # ...and what that would overwrite
 ```
+
+A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,
+and a budget reservation. Running one reserves before it calls, refuses any tool outside its
+allowlist, refuses output its schema does not admit, and interns the transcript linked to the
+exact prompt that produced it — including when the run fails, because that is the run worth
+reading. A playbook's version is the hash of its own bytes, so a run can never be attributed
+to text that did not produce it.
+
+Nothing is retried: not the model call, not the tool, not a bad schema. A retry storm is a
+spending decision made by nobody.
 
 `cost` answers before anything has been spent, which is the point:
 

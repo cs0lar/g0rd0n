@@ -39,6 +39,9 @@ def config_for(
         campaign_usd=campaign,
         standing_usd=standing,
         network_allowlist=("arxiv.org",),
+        model_endpoint="https://api.anthropic.com/v1/messages",
+        model_api_key_file=tmp_path / "anthropic-key",
+        model_prices=(),
     )
 
 

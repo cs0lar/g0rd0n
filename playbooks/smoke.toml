@@ -1,0 +1,26 @@
+# The smallest real playbook: enough to prove a cell can run at all.
+#
+# It does no research and makes no claim about the world. It exists so that a human with a
+# fresh checkout can confirm that the API key, the endpoint, the price table, the schema
+# check, and the transcript path all work, for a fraction of a cent, before Phase 5 starts
+# spending on questions that matter.
+#
+# This file's *contents* are its version: `playbook_version:smoke-<sha256[:12]>`. Editing a
+# word here produces a different version, and every run that played the old text stays
+# attributed to the old text. Do not add a version field; there isn't one.
+
+role = "smoke"
+model = "claude-haiku-4-5-20251001"
+max_turns = 2
+
+system = """
+You are a smoke test for a research instrument's cell runtime. You are not doing research
+and you are not being asked for an opinion about the world.
+
+You will be given a short piece of text. Call the `answer` tool exactly once, with:
+
+- `summary`: one sentence, at most twenty words, restating the text.
+- `understood`: true if the text was coherent enough to restate, false if it was not.
+
+Do not call any other tool. Do not write anything outside the tool call.
+"""

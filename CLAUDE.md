@@ -11,7 +11,8 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–3 are built; Phase 4 (the Cell Runtime) is next.** The package is `src/g0rd0n/`:
+**Phases 0–4a are built; Phase 4b (composition and human cells) is next.** The package is
+`src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, and nothing else.
@@ -26,8 +27,13 @@ Not Do Yet**.
   `config` and `kernel`. The arrow runs one way and there is no function that reads a note
   back as fact.
 
-Nothing calls a model yet. Phases 1–3 built the machine that prices work, remembers it, and
-shows it, not work to price.
+- `cells/` — `playbook.py` (a prompt, versioned by the hash of its own bytes), `cell.py`
+  (what a Cell is: four fields of data, no base class), `model.py` (the `Model` seam, the
+  hand-rolled Anthropic provider, and the network allowlist), `runtime.py` (`run`: reserve,
+  converse, check, record, settle). Depends on `config`, `ledger`, and `kernel`.
+
+Phase 4a is the first phase that calls a model. Phases 1–3 built the machine that prices
+work, remembers it, and shows it.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
 `main`. (`feature/gpt` is a parallel implementation of the same AGENTS.md; do not merge
@@ -140,6 +146,26 @@ consequences that are easy to undo by accident:
 
 `rebuild` drops a directory named by a config file, so it refuses any non-empty directory
 without a `.g0rd0n-vault` marker. Do not relax that. See ADR 0004.
+
+## The cell runtime
+
+`runtime.run` is a function, not a framework, and AGENTS.md §Style says growth here is a
+design failure upstream. Four things that look like bugs and are not:
+
+- **Nothing is retried** — not the model call, not the tool, not a schema failure. Re-asking
+  a model that returned the wrong shape is a parsed guess with a bill attached.
+- **A refused tool and a bad schema both end the run.** They are never fed back to the model
+  as something to work around.
+- **A failed run is still recorded**: the transcript is interned and the `plays` edge
+  committed on the way out, whatever happened. Settlement is in the inner `finally`, so a
+  recording failure never leaves a reservation open.
+- **A transcript is cited from provenance, never committed as a subject or object.** knk
+  leaves `intern_document` entities unnamed, and an unnamed entity in an assertion makes
+  `vault rebuild` fail permanently on an append-only store.
+
+There is no default model price: an unpriced model refuses to run rather than guessing a
+number that would sit in the ledger forever. `max_tokens` is the reservation's `tokens_out`,
+so the budget bounds the call rather than describing it. See ADR 0005.
 
 ## Working rules that differ from ordinary repos
 

@@ -39,6 +39,42 @@ class Config:
     campaign_usd: float
     standing_usd: float
     network_allowlist: tuple[str, ...]
+    model_endpoint: str
+    model_api_key_file: Path
+    model_prices: tuple["Price", ...]
+
+    def price_of(self, model: str) -> "Price":
+        """The declared price for a model, or a `ConfigError` naming what is missing.
+
+        There is no default and no fallback. A model priced by guesswork would put a number
+        into the ledger that nobody chose, and every total derived from it would be wrong in
+        a way no test could see.
+        """
+        for price in self.model_prices:
+            if price.model == model:
+                return price
+        priced = ", ".join(price.model for price in self.model_prices) or "(none)"
+        raise ConfigError(f"no price declared for model {model!r}; model.prices has {priced}")
+
+
+@dataclass(frozen=True)
+class Price:
+    """What one model costs, per million tokens, as the operator declares it.
+
+    In the config file rather than a table in the source because prices change, differ per
+    account, and are the one input the ledger's correctness rests on. A stale constant
+    compiled into g0rd0n would silently corrupt every cost report it ever produced.
+    """
+
+    model: str
+    input_usd_per_mtok: float
+    output_usd_per_mtok: float
+
+    def usd(self, tokens_in: int, tokens_out: int) -> float:
+        million = 1_000_000
+        return (
+            tokens_in * self.input_usd_per_mtok + tokens_out * self.output_usd_per_mtok
+        ) / million
 
 
 #: The closed vocabulary of the config file. A key outside this table is an error, not a
@@ -50,7 +86,12 @@ KNOWN_KEYS: dict[str, frozenset[str]] = {
     "ledger": frozenset({"journal"}),
     "budget": frozenset({"session_usd", "campaign_usd", "standing_usd"}),
     "network": frozenset({"allowlist"}),
+    "model": frozenset({"endpoint", "api_key_file", "prices"}),
 }
+
+#: What one entry of `model.prices` must say. Same closed-vocabulary rule as the sections
+#: above, one level down.
+PRICE_KEYS = frozenset({"model", "input_usd_per_mtok", "output_usd_per_mtok"})
 
 
 def load(path: Path) -> Config:
@@ -78,6 +119,9 @@ def load(path: Path) -> Config:
         campaign_usd=_usd(raw, "budget", "campaign_usd"),
         standing_usd=_usd(raw, "budget", "standing_usd"),
         network_allowlist=_hosts(raw, "network", "allowlist"),
+        model_endpoint=_require(raw, "model", "endpoint", str, "a URL"),
+        model_api_key_file=_path(raw, "model", "api_key_file"),
+        model_prices=_prices(raw),
     )
     if not config.session_usd <= config.campaign_usd <= config.standing_usd:
         raise ConfigError(
@@ -120,6 +164,44 @@ def _usd(raw: dict[str, Any], section: str, key: str) -> float:
         raise ConfigError(f"{section}.{key} must be a number of US dollars")
     if value <= 0:
         raise ConfigError(f"{section}.{key} must be positive, got {value}")
+    return float(value)
+
+
+def _prices(raw: dict[str, Any]) -> tuple[Price, ...]:
+    """Read `model.prices`, a list of `{model, input_usd_per_mtok, output_usd_per_mtok}`.
+
+    A list of tables rather than a nested section per model, so that the closed-key check
+    above stays a flat one-level rule and a mistyped price key is still an error.
+    """
+    entries = _require(raw, "model", "prices", list, "a list of price tables")
+    prices: list[Price] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ConfigError(f"model.prices must contain only tables, got {entry!r}")
+        unknown = set(entry) - PRICE_KEYS
+        if unknown:
+            raise ConfigError(f"model.prices: unknown setting {', '.join(sorted(unknown))}")
+        missing = PRICE_KEYS - set(entry)
+        if missing:
+            raise ConfigError(f"model.prices: missing {', '.join(sorted(missing))}")
+        if not isinstance(entry["model"], str):
+            raise ConfigError("model.prices: model must be a string")
+        prices.append(
+            Price(
+                model=entry["model"],
+                input_usd_per_mtok=_rate(entry, "input_usd_per_mtok"),
+                output_usd_per_mtok=_rate(entry, "output_usd_per_mtok"),
+            )
+        )
+    return tuple(prices)
+
+
+def _rate(entry: dict[str, Any], key: str) -> float:
+    value = entry.get(key)
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ConfigError(f"model.prices: {key} must be a number of US dollars per Mtok")
+    if value < 0:
+        raise ConfigError(f"model.prices: {key} must not be negative, got {value}")
     return float(value)
 
 
