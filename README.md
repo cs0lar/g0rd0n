@@ -30,9 +30,9 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 4a — The Cell Runtime.** `g0rd0n` can price work, remember it with a source attached,
-show it to a human as a navigable argument, and — as of this phase — actually run an agent.
-Cell composition and human cells are 4b.
+**Phase 4 — The Cell Runtime.** `g0rd0n` can price work, remember it with a source attached,
+show it to a human as a navigable argument, run an agent, compose several into a graph, and
+put a question to a person on the same budget. The Question Engine is Phase 5.
 
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is
@@ -75,6 +75,12 @@ to text that did not produce it.
 
 Nothing is retried: not the model call, not the tool, not a bad schema. A retry storm is a
 spending decision made by nobody.
+
+Cells compose as a plain dict — no scheduler, no node classes — where each entry names what it
+needs from the ones before it. A person is one of the things a graph can call: a `HumanQuery`
+has a question, a deadline, and a fallback if nobody answers, is priced in wall-clock, and is
+recorded exactly as a model run is. If the deadline passes, the run says so, because a graph
+running on a fallback is running on an assumption rather than an answer.
 
 `cost` answers before anything has been spent, which is the point:
 

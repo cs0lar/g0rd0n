@@ -22,6 +22,7 @@ def config_for(tmp_path: Path) -> Config:
         model_endpoint="https://api.anthropic.com/v1/messages",
         model_api_key_file=tmp_path / "anthropic-key",
         model_prices=(),
+        human_queue=tmp_path / "human-queue",
     )
 
 
@@ -51,6 +52,9 @@ allowlist = ["arxiv.org", "api.anthropic.com"]
 endpoint = "https://api.anthropic.com/v1/messages"
 api_key_file = "{tmp_path}/anthropic-key"
 prices = [{{ model = "test-model", input_usd_per_mtok = 1.0, output_usd_per_mtok = 5.0 }}]
+
+[human]
+queue = "{tmp_path / "human-queue"}"
 """,
         encoding="utf-8",
     )
@@ -67,7 +71,7 @@ def _set_up(tmp_path: Path) -> None:
     The allowlist in `write_config` carries the endpoint's host, so the network check passes
     and only the thing under test can fail.
     """
-    for directory in ("kernel", "vault", "ledger"):
+    for directory in ("kernel", "vault", "ledger", "human-queue"):
         (tmp_path / directory).mkdir(exist_ok=True)
     key = tmp_path / "anthropic-key"
     key.write_text("sk-ant-test\n", encoding="utf-8")
@@ -83,6 +87,7 @@ def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path
         "knk mcp_server",
         "vault",
         "ledger",
+        "human queue",
         "model api key",
         "model endpoint",
     ]

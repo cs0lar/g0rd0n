@@ -69,3 +69,10 @@ prices = [
     { model = "claude-sonnet-5", input_usd_per_mtok = 3.0, output_usd_per_mtok = 15.0 },
     { model = "claude-haiku-4-5-20251001", input_usd_per_mtok = 1.0, output_usd_per_mtok = 5.0 },
 ]
+
+[human]
+# Where a question for a person is dropped, and where their answer is picked up (Phase 4b).
+# A directory rather than a console prompt because g0rd0n runs unattended: the question
+# outlives the process that asked it, and can be answered from another machine or another
+# day. Both halves stay on disk, so what was asked is auditable alongside what was answered.
+queue = "~/.local/share/g0rd0n/human-queue"

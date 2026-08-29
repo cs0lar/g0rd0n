@@ -1,15 +1,18 @@
 """Cells: agents and humans, with playbooks, allowlists, and typed output.
 
-Four modules, one mechanism each. `playbook` is a versioned prompt, identified by the hash of
-its own bytes. `cell` is what an agent *is* — five fields of data, no base class. `model` is
+Six modules, one mechanism each. `playbook` is a versioned prompt, identified by the hash of
+its own bytes. `cell` is what an agent *is* — four fields of data, no base class. `model` is
 the seam a provider sits behind, plus the one provider, plus the network allowlist. `runtime`
-is the function that plays a cell: reserve, converse, check, record, settle.
+is the function that plays a cell: reserve, converse, check, record, settle. `human` is the
+same, for a person: a question, a deadline, and a declared fallback. `graph` composes them,
+as a dict.
 
 A Cell commits assertions; an Instrument does not (AGENTS.md §6). That is why `Tool.run`
-returns text and why nothing in `cell` or `model` imports the bridge — only `runtime` does,
-and only to record what happened.
+returns text and why nothing in `cell` or `model` imports the bridge — only `runtime`,
+`human`, and `graph` do, and only to record what happened.
 
-Phase 4a runs one cell. Composition (a DAG in data) and `HumanQuery` are 4b.
+A person and a model return the same `Run` and reserve from the same ledger, because
+AGENTS.md §Phase 4 says humans are resources in the network with the same accounting.
 
 Deletion criterion: this package holds the wager that g0rd0n can act without acting
 unaccountably. Delete it and every Phase 4 minimum test loses its verdict at once — no
@@ -26,6 +29,10 @@ from g0rd0n.cells.cell import (
     ToolNotAllowed,
     check_output,
 )
+from g0rd0n.cells.graph import Graph, GraphError, Node, order
+from g0rd0n.cells.graph import run as run_graph
+from g0rd0n.cells.human import Asker, FileDrop, HumanError, HumanQuery
+from g0rd0n.cells.human import ask as ask_human
 from g0rd0n.cells.model import (
     ANSWER,
     Anthropic,
@@ -46,12 +53,19 @@ from g0rd0n.cells.runtime import Run, RunId, run, transcript
 __all__ = [
     "ANSWER",
     "Anthropic",
+    "Asker",
     "Cell",
     "CellError",
+    "FileDrop",
+    "Graph",
+    "GraphError",
+    "HumanError",
+    "HumanQuery",
     "Model",
     "ModelError",
     "ModelUnavailable",
     "NetworkRefused",
+    "Node",
     "Playbook",
     "PlaybookError",
     "Reply",
@@ -64,9 +78,12 @@ __all__ = [
     "ToolNotAllowed",
     "ToolResult",
     "Turn",
+    "ask_human",
     "check_host",
     "check_output",
     "load_playbook",
+    "order",
     "run",
+    "run_graph",
     "transcript",
 ]

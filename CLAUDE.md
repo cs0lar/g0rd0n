@@ -11,7 +11,7 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–4a are built; Phase 4b (composition and human cells) is next.** The package is
+**Phases 0–4 are built; Phase 5 (the Question Engine) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
@@ -30,9 +30,10 @@ Not Do Yet**.
 - `cells/` — `playbook.py` (a prompt, versioned by the hash of its own bytes), `cell.py`
   (what a Cell is: four fields of data, no base class), `model.py` (the `Model` seam, the
   hand-rolled Anthropic provider, and the network allowlist), `runtime.py` (`run`: reserve,
-  converse, check, record, settle). Depends on `config`, `ledger`, and `kernel`.
+  converse, check, record, settle), `human.py` (a person as an instrument: question, deadline,
+  fallback), `graph.py` (composition, as a dict). Depends on `config`, `ledger`, and `kernel`.
 
-Phase 4a is the first phase that calls a model. Phases 1–3 built the machine that prices
+Phase 4 is the first phase that calls a model. Phases 1–3 built the machine that prices
 work, remembers it, and shows it.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
@@ -166,6 +167,20 @@ design failure upstream. Four things that look like bugs and are not:
 There is no default model price: an unpriced model refuses to run rather than guessing a
 number that would sit in the ledger forever. `max_tokens` is the reservation's `tokens_out`,
 so the budget bounds the call rather than describing it. See ADR 0005.
+
+## Composition and people
+
+A graph is a `dict[str, Node]` — no builder, no executor, nothing concurrent. Tasks use
+`$name` with `string.Template`, **not** `{name}` with `str.format`, because a research task is
+prose full of braces (JSON, code, set notation) that `format` would read as syntax. Ready
+nodes run in name order so two identical graphs produce identical ledgers. A failed node stops
+the graph; every node reserves and settles on its own.
+
+For a `HumanQuery`, the rule that catches people out: **the fallback covers the deadline and
+nothing else.** A person who answers in the wrong shape is a failed run, exactly as a model
+would be — substituting the fallback there would write "nobody answered" over someone who did.
+`Run.fell_back` is a field rather than a note in the transcript because a graph downstream of a
+fallback is running on an assumption. See ADR 0006.
 
 ## Working rules that differ from ordinary repos
 

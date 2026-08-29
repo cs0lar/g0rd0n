@@ -50,7 +50,13 @@ RunId = str
 
 @dataclass(frozen=True)
 class Run:
-    """One settled cell run: what it produced, what it cost, and where the record is."""
+    """One settled run — of a cell, or of a person — with what it cost and where it is recorded.
+
+    `fell_back` is only ever true for a `HumanQuery` whose deadline passed. It is a field on
+    the result rather than a detail in the transcript because a caller must be able to tell
+    "a person said this" from "nobody answered and this is what we agreed to assume", and a
+    graph downstream of a fallback is running on an assumption, not an answer.
+    """
 
     id: RunId
     role: str
@@ -59,6 +65,7 @@ class Run:
     transcript: EntityId
     playbook: Ref
     turns: tuple[Turn, ...]
+    fell_back: bool = False
 
 
 def run(
@@ -97,7 +104,9 @@ def run(
         failure = exc
 
     try:
-        document = _record(bridge, cell, identifier, turns)
+        document = record(
+            bridge, cell.playbook.ref, identifier, transcript(cell, identifier, turns)
+        )
     finally:
         ledger.settle(reservation)
 
@@ -191,8 +200,12 @@ def _check_allowlist(cell: Cell, available: Mapping[str, Tool]) -> None:
         raise CellError(f"{cell.role} allows tools that were not provided: {', '.join(missing)}")
 
 
-def _record(bridge: Bridge, cell: Cell, identifier: RunId, turns: list[Turn]) -> EntityId:
-    """Intern the transcript and link the run to the playbook version that produced it.
+def record(bridge: Bridge, version: Ref, identifier: RunId, text: str) -> EntityId:
+    """Intern a transcript and link the run to the prompt version that produced it.
+
+    Shared with `human.ask`, because AGENTS.md §Phase 4 accounts for a person the same way it
+    accounts for a model: a question is a prompt, and a person's answer is attributable to the
+    exact wording that was put to them.
 
     The transcript is a document entity, and knk leaves those unnamed, so it is referenced
     from the provenance rather than committed as a subject or object — every entity in an
@@ -203,9 +216,9 @@ def _record(bridge: Bridge, cell: Cell, identifier: RunId, turns: list[Turn]) ->
     for a fact about g0rd0n's own execution, but the bridge has exactly one write path and
     this is not the phase to grow it a second one.
     """
-    document = bridge.intern_document(transcript(cell, identifier, turns).encode("utf-8"))
+    document = bridge.intern_document(text.encode("utf-8"))
     bridge.hypothesise(
-        Claim(Ref("run", identifier), "plays", cell.playbook.ref, 1.0),
+        Claim(Ref("run", identifier), "plays", version, 1.0),
         Provenance(
             source=Ref("source", f"transcript-{identifier}"),
             method=f"g0rd0n run transcript, knk document {document}",
