@@ -137,6 +137,18 @@ class Bridge:
         encoded = base64.b64encode(content).decode("ascii")
         return int(self._client.call("intern_document", {"content": encoded}))
 
+    def name_of(self, entity_id: EntityId) -> Ref:
+        """Resolve an entity id back to its `kind:name`. The inverse of `intern`.
+
+        Assertions come back carrying ids, so anything that renders them — the vault, and
+        Phase 11's cockpit after it — needs this to say what an assertion is *about*.
+        """
+        return Ref.parse(str(json.loads(self._client.call("entity_name", {"id": entity_id}))))
+
+    def predicate_of(self, predicate_id: int) -> str:
+        """Resolve a predicate id back to its name. The inverse of `_intern_predicate`."""
+        return str(json.loads(self._client.call("predicate_name", {"id": predicate_id})))
+
     def get(self, assertion_id: AssertionId) -> Assertion:
         """Fetch one assertion by id.
 

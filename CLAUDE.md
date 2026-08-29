@@ -11,19 +11,23 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–2 are built; Phase 3 (the Vault) is next.** The package is `src/g0rd0n/`:
+**Phases 0–3 are built; Phase 4 (the Cell Runtime) is next.** The package is `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
-- `cli.py` — `version`, `config`, `doctor`, `cost`, and nothing else.
+- `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
 - `kernel/` — `vocabulary.py` (the closed twelve predicates and the kinds they join),
   `mcp.py` (JSON-RPC over a `knk` subprocess), `bridge.py` (the one write path). Depends on
   `config` and nothing else in `g0rd0n`, and does not know what a Wager is.
+- `vault/` — `note.py` (the projection, a **pure** function `Snapshot -> {path: text}`),
+  `projector.py` (the only impure half: read the kernel, compare, drop, write). Depends on
+  `config` and `kernel`. The arrow runs one way and there is no function that reads a note
+  back as fact.
 
-Nothing calls a model yet. Phases 1–2 built the machine that prices work and remembers it,
-not work to price.
+Nothing calls a model yet. Phases 1–3 built the machine that prices work, remembers it, and
+shows it, not work to price.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
 `main`. (`feature/gpt` is a parallel implementation of the same AGENTS.md; do not merge
@@ -118,6 +122,24 @@ Three things about the bridge that are easy to get wrong:
 
 The kernel tests run against a real `mcp_server`, never a mock, and CI builds `knk` from
 source to get one.
+
+## The vault
+
+`note.render` is pure and must stay pure — no clock, no filesystem, no subprocess. That is
+what makes `rebuild_is_idempotent_byte_for_byte` checkable by calling a function twice. Three
+consequences that are easy to undo by accident:
+
+- **Never put a rebuild timestamp in a note.** It would make every rebuild differ from the
+  last. The timestamps that belong there are the kernel's `observed_at`.
+- **Sort anything set-derived before rendering it.** Python randomises string hashing per
+  process, so a same-process test agrees with itself even when the sort is gone;
+  `the_projection_does_not_depend_on_python_hash_ordering` re-renders under three
+  `PYTHONHASHSEED`s because the other three determinism tests all pass with that bug present.
+- **`FOLDERS` must stay total over `KINDS`.** A kind with no folder is silently dropped from
+  the projection, which is the one thing an index over the kernel may never do.
+
+`rebuild` drops a directory named by a config file, so it refuses any non-empty directory
+without a `.g0rd0n-vault` marker. Do not relax that. See ADR 0004.
 
 ## Working rules that differ from ordinary repos
 

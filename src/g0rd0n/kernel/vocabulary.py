@@ -70,6 +70,8 @@ class Ref:
             raise VocabularyError(f"not a kind this vocabulary has: {self.kind!r}")
         if not self.name or ":" in self.name:
             raise VocabularyError(f"not a usable entity name: {self.name!r}")
+        if _unusable_as_a_filename(self.name):
+            raise VocabularyError(f"not a usable entity name: {self.name!r}")
 
     def __str__(self) -> str:
         return f"{self.kind}:{self.name}"
@@ -121,3 +123,25 @@ def check(claim: Claim) -> None:
 
 def _or(kinds: frozenset[str]) -> str:
     return " or ".join(repr(kind) for kind in sorted(kinds))
+
+
+def _unusable_as_a_filename(name: str) -> bool:
+    """True if `name` could not safely become the name of a note in the vault.
+
+    Checked here rather than in the projector because the kernel is append-only: a name that
+    the vault cannot write is not a bad rebuild, it is a vault that can never be rebuilt
+    again, with no way to take the entity back out. The cheap fix is upstream, at the only
+    place a name is ever constructed.
+
+    `..` and a path separator are the ones that matter — a note path is joined onto
+    `vault.root`, so either would write outside the vault. The rest are names no filesystem
+    or Obsidian handles predictably.
+    """
+    return (
+        name in {".", ".."}
+        or "/" in name
+        or "\\" in name
+        or name != name.strip()
+        or name.startswith(".")
+        or any(ord(char) < 0x20 or ord(char) == 0x7F for char in name)
+    )
