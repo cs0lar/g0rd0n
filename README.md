@@ -39,6 +39,10 @@ Phase 05 adds the uniform resource registry and invocation boundary under
 `g0rd0n/resources/`, including permissions, rate limits, timeout/cancellation,
 context validation, deterministic fakes, and attributable per-invocation costs.
 
+Phase 06 adds durable budget governance under `g0rd0n/budget/`: program and
+session limits, concurrency-safe maximum-cost reservations, stop conditions,
+hash-chained cost events, and estimated-versus-actual Markdown reports.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
