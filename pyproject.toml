@@ -1,0 +1,47 @@
+[project]
+name = "g0rd0n"
+description = "A bookkeeping machine for a research programme."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "cs0lar" }]
+dynamic = ["version"]
+
+# No dependencies, and none until a phase needs one. The MCP client in Phase 2 is the first
+# candidate; an agent framework is never one (AGENTS.md, Style).
+dependencies = []
+
+[project.scripts]
+g0rd0n = "g0rd0n.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/g0rd0n/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/g0rd0n"]
+
+[dependency-groups]
+dev = ["mypy>=1.11", "pytest>=8.0", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# ruff formats Python inside Markdown fences. AGENTS.md and the ADRs quote illustrative code
+# that must stay exactly as the spec wrote it.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ANN", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

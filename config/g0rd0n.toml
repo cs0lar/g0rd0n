@@ -1,0 +1,42 @@
+# g0rd0n configuration.
+#
+# This file is the only way a path, a cap, or a reachable host enters the process. Nothing
+# below the CLI reads the environment, so what is written here is what a run did. Unknown
+# sections and keys are rejected rather than ignored — a mistyped cap that silently does
+# nothing is the failure mode this file exists to prevent.
+#
+# Paths are machine-specific. Edit them; `g0rd0n doctor` will tell you what is missing.
+
+[kernel]
+# knk's storage root, and the mcp_server binary g0rd0n speaks to over stdio (Phase 2).
+# g0rd0n never links, vendors, or forks the C++ kernel.
+storage_root = "~/.local/share/g0rd0n/kernel"
+mcp_server = "~/development/c++/knk/build/mcp_server"
+
+[vault]
+# The Obsidian vault (Phase 3). A derived projection of the kernel: rebuildable from
+# scratch, never read back as fact.
+root = "~/.local/share/g0rd0n/vault"
+
+[budget]
+# The three caps from AGENTS.md, in US dollars, smallest first. They must nest.
+# Exceeding one raises BudgetExhausted and settles cleanly (Phase 1).
+session_usd = 5.0
+campaign_usd = 50.0
+standing_usd = 500.0
+
+[network]
+# The only hosts any instrument may reach (Phase 6). Primary sources first: an allowlist of
+# summarisers is how a literature review turns into a game of telephone.
+allowlist = [
+    "arxiv.org",
+    "export.arxiv.org",
+    "openreview.net",
+    "proceedings.mlr.press",
+    "papers.nips.cc",
+    "dl.acm.org",
+    "ieeexplore.ieee.org",
+    "doi.org",
+    "api.semanticscholar.org",
+    "zenodo.org",
+]
