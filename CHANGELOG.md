@@ -5,6 +5,27 @@ All notable changes to this project are recorded here. Phases refer to the roadm
 
 ## [Unreleased]
 
+### Added — Phase 2: The Kernel Bridge
+
+- An MCP stdio client speaking JSON-RPC 2.0 to `knk`'s `mcp_server` as a subprocess. g0rd0n
+  never links, vendors, or forks the C++ kernel. The client restarts a dead subprocess on
+  demand — the kernel replays its log, so a restart costs a replay and nothing else.
+- The closed predicate vocabulary: the twelve predicates from `AGENTS.md` §Phase 2 and the
+  kinds each joins. Nothing outside the table is committed, and an edge written backwards
+  (`refutes` running hypothesis → result) is rejected.
+- Entity references carry their kind (`hypothesis:h-001`), so direction checking needs no
+  registry and knk's entity log is readable on its own. See
+  `docs/adr/0003-entity-references-carry-their-kind.md`.
+- `Bridge.hypothesise` — the only write path. Machine-suggested claims land as `Hypothesis`;
+  there is no way to commit an `Active` assertion, because promotion needs Phase 10's three
+  keys.
+- Provenance is required and checked at the bridge: a source entity of kind `source` and a
+  non-empty extraction method, with no exemption for well-known facts.
+- Read paths: `get`, `hypotheses`, `assertions_for`, `current`, `explain`, `provenance_for`,
+  `changes_since`, `conflicts`. `conflicts` surfaces and never resolves.
+- CI now checks out and builds `knk` from source; the kernel tests run against a real
+  `mcp_server`, never a fake.
+
 ### Added — Phase 1: The Ledger
 
 - `Cost` — the six-dimensional unit of what work took (tokens in/out, USD, wall-clock, GPU

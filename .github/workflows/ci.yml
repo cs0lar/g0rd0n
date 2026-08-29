@@ -14,6 +14,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The kernel tests run against a real knk, never a fake: a bridge verified against a
+      # mock is a bridge verified against what its author believed knk does. knk is a
+      # separate repository and is never vendored, so CI builds it from source.
+      - name: Checkout knk
+        uses: actions/checkout@v4
+        with:
+          repository: cs0lar/knk
+          path: knk
+          ref: main
+
+      - name: Cache the knk build
+        uses: actions/cache@v4
+        with:
+          path: knk/build
+          key: knk-${{ runner.os }}-${{ hashFiles('knk/CMakeLists.txt', 'knk/src/**', 'knk/include/**', 'knk/mcp/**') }}
+
+      - name: Build knk's mcp_server
+        run: |
+          cmake -S knk -B knk/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build knk/build --target mcp_server --parallel
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -31,5 +52,7 @@ jobs:
       - name: Types
         run: uv run mypy
 
+      # The path is passed explicitly, so a kernel that failed to build fails the run rather
+      # than silently skipping the invariants that need it.
       - name: Tests
-        run: uv run pytest
+        run: uv run pytest --knk-mcp-server="$GITHUB_WORKSPACE/knk/build/mcp_server"

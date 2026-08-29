@@ -30,14 +30,19 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 1 — The Ledger.** `g0rd0n` can now price and account for work it has not yet learned
-to do. It cannot do any of that work: no model is called until spending it can be priced and
-every claim it makes can be attributed, and the kernel bridge (Phase 2) does not exist yet.
+**Phase 2 — The Kernel Bridge.** `g0rd0n` can price work it has not learned to do, and
+remember what it is told with a source attached. It still calls no model: the cell runtime is
+Phase 4.
 
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is
 derived from. Three caps — session, campaign, standing — stop a run where it said it would
 stop, settling cleanly rather than crashing.
+
+Every claim entering memory carries a resolvable source and the method that extracted it, uses
+one of twelve predicates and no others, and lands as a `Hypothesis` — there is no way to
+commit a believed assertion, because promotion needs a settled Wager, a survived attack, and a
+human key, and none of those exist yet.
 
 ## Quickstart
 
@@ -86,9 +91,17 @@ from the environment.
 ## Dependencies
 
 The knowledge kernel is [`knk`](https://github.com/cs0lar/knk), a separate C++20 bitemporal
-assertion store. From Phase 2 onward `g0rd0n` speaks to it as an MCP subprocess over stdio,
-and never links, vendors, or forks it — a missing kernel operation is an issue filed against
-`knk`, not a workaround here.
+assertion store. `g0rd0n` speaks to it as an MCP subprocess over stdio, and never links,
+vendors, or forks it — a missing kernel operation is an issue filed against `knk`, not a
+workaround here.
+
+The kernel tests need a built `mcp_server` and are never run against a fake. They look for one
+at `~/development/c++/knk/build/mcp_server`, skip if it is not there, and take
+`--knk-mcp-server=PATH` to point elsewhere:
+
+```bash
+uv run pytest --knk-mcp-server=/path/to/knk/build/mcp_server
+```
 
 ## Licence
 

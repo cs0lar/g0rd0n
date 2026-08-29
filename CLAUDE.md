@@ -11,15 +11,19 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–1 are built; Phase 2 (the Kernel Bridge) is next.** The package is `src/g0rd0n/`:
+**Phases 0–2 are built; Phase 3 (the Vault) is next.** The package is `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
+- `kernel/` — `vocabulary.py` (the closed twelve predicates and the kinds they join),
+  `mcp.py` (JSON-RPC over a `knk` subprocess), `bridge.py` (the one write path). Depends on
+  `config` and nothing else in `g0rd0n`, and does not know what a Wager is.
 
-Nothing calls a model yet. Phase 1 built the machine that prices work, not work to price.
+Nothing calls a model yet. Phases 1–2 built the machine that prices work and remembers it,
+not work to price.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
 `main`. (`feature/gpt` is a parallel implementation of the same AGENTS.md; do not merge
@@ -36,6 +40,10 @@ uv run mypy                      # config in pyproject.toml: strict, over src an
 uv run pytest
 uv run pytest tests/test_razor.py -k deletion_criterion   # one test
 uv run g0rd0n doctor             # what is missing on this machine
+
+# The kernel tests need a built knk mcp_server. They default to
+# ~/development/c++/knk/build/mcp_server and skip if it is absent.
+uv run pytest --knk-mcp-server=/path/to/knk/build/mcp_server
 ```
 
 `ruff` is configured with `extend-exclude = ["*.md"]` because it otherwise reformats the
@@ -96,6 +104,20 @@ Commits into the kernel are constrained twice over: the closed predicate vocabul
 `AGENTS.md` §Phase 2 (nothing outside that list, ever), and provenance (an unsourced claim is
 rejected at the bridge, with no exemption for well-known facts). Machine-suggested claims land
 as `Hypothesis` status and are only promoted by the Phase 10 referee.
+
+Three things about the bridge that are easy to get wrong:
+
+- **Entity names carry their kind**: `hypothesis:h-001`, `source:arxiv-2401-00001`. That is
+  what makes the vocabulary's edge-direction check free — `refutes` runs result → hypothesis
+  and the reverse is rejected. Never intern a bare name. See ADR 0003.
+- **`Bridge.hypothesise` is the only write path**, deliberately. Do not add a `commit`.
+- **`knk`'s `find_conflicts` is `Active`-only**, so `conflicts()` returns nothing while
+  everything g0rd0n writes is a `Hypothesis`. That is faithful pass-through, not a bug to fix
+  in g0rd0n — a missing kernel operation is an issue against `knk`. ADR 0003 records both
+  readings of the gap.
+
+The kernel tests run against a real `mcp_server`, never a mock, and CI builds `knk` from
+source to get one.
 
 ## Working rules that differ from ordinary repos
 
