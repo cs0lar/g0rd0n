@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from g0rd0n import __version__, vault
+from g0rd0n.cells import model
 from g0rd0n.config import Config, ConfigError, load
 from g0rd0n.kernel import KernelError
 from g0rd0n.kernel import connect as connect_kernel
@@ -67,6 +68,8 @@ def doctor(config: Config) -> list[Check]:
         _executable("knk mcp_server", config.kernel_mcp_server),
         _directory("vault", config.vault_root),
         _directory("ledger", config.ledger_journal.parent),
+        _api_key(config),
+        _endpoint(config),
     ]
 
 
@@ -184,6 +187,32 @@ def _directory(name: str, path: Path) -> Check:
     if path.is_dir():
         return Check(name, True, str(path))
     return Check(name, False, f"{path} does not exist (create it, or fix the config)")
+
+
+def _api_key(config: Config) -> Check:
+    """Is there a key, and is it only readable by its owner?
+
+    The mode check is a finding rather than a refusal: a world-readable key is the user's to
+    fix, and `doctor` exists to say what is wrong on a machine, not to change it.
+    """
+    path = config.model_api_key_file
+    if not path.is_file():
+        return Check("model api key", False, f"{path} does not exist (create it, or fix config)")
+    if not path.read_text(encoding="utf-8").strip():
+        return Check("model api key", False, f"{path} is empty")
+    mode = path.stat().st_mode & 0o077
+    if mode:
+        return Check("model api key", False, f"{path} is readable by others (chmod 600 it)")
+    return Check("model api key", True, str(path))
+
+
+def _endpoint(config: Config) -> Check:
+    """A model endpoint off the allowlist is a run that will refuse at the first call."""
+    try:
+        model.check_host(config.model_endpoint, config.network_allowlist)
+    except model.NetworkRefused as exc:
+        return Check("model endpoint", False, str(exc))
+    return Check("model endpoint", True, config.model_endpoint)
 
 
 def _executable(name: str, path: Path) -> Check:

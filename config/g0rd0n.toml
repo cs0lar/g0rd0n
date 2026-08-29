@@ -35,6 +35,7 @@ standing_usd = 500.0
 # The only hosts any instrument may reach (Phase 6). Primary sources first: an allowlist of
 # summarisers is how a literature review turns into a game of telephone.
 allowlist = [
+    "api.anthropic.com",
     "arxiv.org",
     "export.arxiv.org",
     "openreview.net",
@@ -45,4 +46,26 @@ allowlist = [
     "doi.org",
     "api.semanticscholar.org",
     "zenodo.org",
+]
+
+[model]
+# Where cells call, and what it costs (Phase 4). The endpoint's host must appear in the
+# allowlist above, or the call is refused before anything is sent.
+endpoint = "https://api.anthropic.com/v1/messages"
+
+# A file containing the API key, and nothing else. A path rather than the key itself so the
+# secret stays out of the repository, and a file rather than an environment variable because
+# the environment is ambient state that makes two runs differ invisibly.
+api_key_file = "~/.config/g0rd0n/anthropic-api-key"
+
+# What each model costs, per million tokens. Declared here rather than compiled in: prices
+# change, differ per account, and every number in `g0rd0n cost` is derived from these. A
+# model with no price cannot be run — there is no default, because a guessed price is a
+# number nobody chose sitting in the ledger forever.
+#
+# Check these against your own billing page before trusting a total.
+prices = [
+    { model = "claude-opus-5", input_usd_per_mtok = 15.0, output_usd_per_mtok = 75.0 },
+    { model = "claude-sonnet-5", input_usd_per_mtok = 3.0, output_usd_per_mtok = 15.0 },
+    { model = "claude-haiku-4-5-20251001", input_usd_per_mtok = 1.0, output_usd_per_mtok = 5.0 },
 ]

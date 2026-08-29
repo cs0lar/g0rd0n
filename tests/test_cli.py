@@ -18,7 +18,10 @@ def config_for(tmp_path: Path) -> Config:
         session_usd=5.0,
         campaign_usd=50.0,
         standing_usd=500.0,
-        network_allowlist=("arxiv.org",),
+        network_allowlist=("arxiv.org", "api.anthropic.com"),
+        model_endpoint="https://api.anthropic.com/v1/messages",
+        model_api_key_file=tmp_path / "anthropic-key",
+        model_prices=(),
     )
 
 
@@ -42,11 +45,33 @@ campaign_usd = 50.0
 standing_usd = 500.0
 
 [network]
-allowlist = ["arxiv.org"]
+allowlist = ["arxiv.org", "api.anthropic.com"]
+
+[model]
+endpoint = "https://api.anthropic.com/v1/messages"
+api_key_file = "{tmp_path}/anthropic-key"
+prices = [{{ model = "test-model", input_usd_per_mtok = 1.0, output_usd_per_mtok = 5.0 }}]
 """,
         encoding="utf-8",
     )
     return path
+
+
+def _named(checks: list[cli.Check], name: str) -> cli.Check:
+    return next(check for check in checks if check.name == name)
+
+
+def _set_up(tmp_path: Path) -> None:
+    """Everything `doctor` looks for, so a test about one check is not about the others.
+
+    The allowlist in `write_config` carries the endpoint's host, so the network check passes
+    and only the thing under test can fail.
+    """
+    for directory in ("kernel", "vault", "ledger"):
+        (tmp_path / directory).mkdir(exist_ok=True)
+    key = tmp_path / "anthropic-key"
+    key.write_text("sk-ant-test\n", encoding="utf-8")
+    key.chmod(0o600)
 
 
 def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path) -> None:
@@ -58,15 +83,20 @@ def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path
         "knk mcp_server",
         "vault",
         "ledger",
+        "model api key",
+        "model endpoint",
     ]
-    assert not any(check.ok for check in checks)
+    on_this_machine = [check for check in checks if check.name != "model endpoint"]
+
+    assert not any(check.ok for check in on_this_machine)
     assert all(check.detail for check in checks), "a failing check must say what to do"
+    # The endpoint check reads only the config, so it is the one thing that can pass before
+    # anything exists. That is the point of it: a misspelled host is findable without a kernel.
+    assert _named(checks, "model endpoint").ok
 
 
 def test_doctor_passes_when_everything_is_where_the_config_says(tmp_path: Path) -> None:
-    (tmp_path / "kernel").mkdir()
-    (tmp_path / "vault").mkdir()
-    (tmp_path / "ledger").mkdir()
+    _set_up(tmp_path)
     server = tmp_path / "mcp_server"
     server.write_text("#!/bin/sh\n", encoding="utf-8")
     server.chmod(0o755)
@@ -75,9 +105,7 @@ def test_doctor_passes_when_everything_is_where_the_config_says(tmp_path: Path) 
 
 
 def test_doctor_fails_a_kernel_binary_that_is_not_executable(tmp_path: Path) -> None:
-    (tmp_path / "kernel").mkdir()
-    (tmp_path / "vault").mkdir()
-    (tmp_path / "ledger").mkdir()
+    _set_up(tmp_path)
     (tmp_path / "mcp_server").write_text("", encoding="utf-8")
 
     failed = [check for check in cli.doctor(config_for(tmp_path)) if not check.ok]

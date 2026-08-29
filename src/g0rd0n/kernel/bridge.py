@@ -142,8 +142,20 @@ class Bridge:
 
         Assertions come back carrying ids, so anything that renders them — the vault, and
         Phase 11's cockpit after it — needs this to say what an assertion is *about*.
+
+        Entities made by `intern_document` have no name: knk answers `null` for them. That is
+        raised as a `ToolError` naming the id, because the only way one could reach here is
+        an assertion committed against a document entity, which ADR 0003 forbids — every
+        entity in an assertion carries its kind — and which would leave the vault
+        unprojectable. Cite a document from provenance instead.
         """
-        return Ref.parse(str(json.loads(self._client.call("entity_name", {"id": entity_id}))))
+        name = json.loads(self._client.call("entity_name", {"id": entity_id}))
+        if name is None:
+            raise ToolError(
+                f"entity {entity_id} has no name; a document entity cannot appear in an "
+                "assertion (see ADR 0003) — reference it from provenance instead"
+            )
+        return Ref.parse(str(name))
 
     def predicate_of(self, predicate_id: int) -> str:
         """Resolve a predicate id back to its name. The inverse of `_intern_predicate`."""
