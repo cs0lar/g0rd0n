@@ -24,7 +24,7 @@ from g0rd0n.cells.cell import Cell, Schema, Tool
 from g0rd0n.cells.model import ANSWER, Reply, ToolCall, Turn
 from g0rd0n.cells.playbook import Playbook
 from g0rd0n.cli import Check
-from g0rd0n.config import Config, ConfigError, Price
+from g0rd0n.config import Config, ConfigError
 from g0rd0n.kernel import Bridge, Ref
 from g0rd0n.ledger import Cost, Ledger, Overspend
 from g0rd0n.ledger.ledger import open_session
@@ -104,17 +104,6 @@ def a_cell(tools: tuple[str, ...] = (), max_turns: int = 4, schema: Schema | Non
 
 def a_tool(name: str, result: str = "ok") -> Tool:
     return Tool(name, f"the {name} tool", {"query": str}, lambda _: result)
-
-
-@pytest.fixture
-def cell_config(kernel_config: Config, tmp_path: Path) -> Config:
-    """A kernel config that also knows what a model costs."""
-    from dataclasses import replace
-
-    return replace(
-        kernel_config,
-        model_prices=(Price("test-model", input_usd_per_mtok=1.0, output_usd_per_mtok=5.0),),
-    )
 
 
 def play(

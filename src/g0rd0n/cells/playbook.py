@@ -33,6 +33,16 @@ class PlaybookError(Exception):
     """A playbook is missing, malformed, or says something a cell cannot play."""
 
 
+def version_of(content: bytes) -> str:
+    """The version of a prompt: the hash of the exact bytes that will be sent.
+
+    Shared with `human.HumanQuery`, whose question is its prompt. Anything a run can be
+    attributed to is versioned the same way, so "which text produced this?" has one answer
+    and one mechanism.
+    """
+    return hashlib.sha256(content).hexdigest()[:DIGEST_LENGTH]
+
+
 @dataclass(frozen=True)
 class Playbook:
     """One versioned prompt, and the role it is written for.
@@ -79,7 +89,7 @@ def load(path: Path) -> Playbook:
         system=_text(raw, path, "system"),
         model=_text(raw, path, "model"),
         max_turns=_turns(raw, path),
-        version=hashlib.sha256(content).hexdigest()[:DIGEST_LENGTH],
+        version=version_of(content),
     )
     if not playbook.system.strip():
         raise PlaybookError(f"{path}: system prompt is empty")

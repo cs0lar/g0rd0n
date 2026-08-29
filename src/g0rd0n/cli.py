@@ -68,6 +68,7 @@ def doctor(config: Config) -> list[Check]:
         _executable("knk mcp_server", config.kernel_mcp_server),
         _directory("vault", config.vault_root),
         _directory("ledger", config.ledger_journal.parent),
+        _directory("human queue", config.human_queue),
         _api_key(config),
         _endpoint(config),
     ]

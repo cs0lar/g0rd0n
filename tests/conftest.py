@@ -7,11 +7,12 @@ exists to avoid.
 """
 
 from collections.abc import Iterator
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
-from g0rd0n.config import Config
+from g0rd0n.config import Config, Price
 from g0rd0n.kernel import Bridge, connect
 
 #: Where knk is checked out and built on a development machine. CI passes `--knk-mcp-server`
@@ -65,6 +66,16 @@ def kernel_config(knk_server: Path, tmp_path: Path) -> Config:
         model_endpoint="https://api.anthropic.com/v1/messages",
         model_api_key_file=tmp_path / "anthropic-key",
         model_prices=(),
+        human_queue=tmp_path / "human-queue",
+    )
+
+
+@pytest.fixture
+def cell_config(kernel_config: Config) -> Config:
+    """A kernel config that also knows what a model costs. Phase 4 onwards."""
+    return replace(
+        kernel_config,
+        model_prices=(Price("test-model", input_usd_per_mtok=1.0, output_usd_per_mtok=5.0),),
     )
 
 

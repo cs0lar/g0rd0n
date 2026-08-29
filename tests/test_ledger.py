@@ -42,6 +42,7 @@ def config_for(
         model_endpoint="https://api.anthropic.com/v1/messages",
         model_api_key_file=tmp_path / "anthropic-key",
         model_prices=(),
+        human_queue=tmp_path / "human-queue",
     )
 
 

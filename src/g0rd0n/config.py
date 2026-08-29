@@ -42,6 +42,7 @@ class Config:
     model_endpoint: str
     model_api_key_file: Path
     model_prices: tuple["Price", ...]
+    human_queue: Path
 
     def price_of(self, model: str) -> "Price":
         """The declared price for a model, or a `ConfigError` naming what is missing.
@@ -87,6 +88,7 @@ KNOWN_KEYS: dict[str, frozenset[str]] = {
     "budget": frozenset({"session_usd", "campaign_usd", "standing_usd"}),
     "network": frozenset({"allowlist"}),
     "model": frozenset({"endpoint", "api_key_file", "prices"}),
+    "human": frozenset({"queue"}),
 }
 
 #: What one entry of `model.prices` must say. Same closed-vocabulary rule as the sections
@@ -122,6 +124,7 @@ def load(path: Path) -> Config:
         model_endpoint=_require(raw, "model", "endpoint", str, "a URL"),
         model_api_key_file=_path(raw, "model", "api_key_file"),
         model_prices=_prices(raw),
+        human_queue=_path(raw, "human", "queue"),
     )
     if not config.session_usd <= config.campaign_usd <= config.standing_usd:
         raise ConfigError(

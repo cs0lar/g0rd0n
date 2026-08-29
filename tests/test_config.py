@@ -29,6 +29,9 @@ allowlist = ["arxiv.org", "api.anthropic.com"]
 endpoint = "https://api.anthropic.com/v1/messages"
 api_key_file = "~/anthropic-key"
 prices = [{ model = "claude-opus-5", input_usd_per_mtok = 15.0, output_usd_per_mtok = 75.0 }]
+
+[human]
+queue = "~/human-queue"
 """
 
 
@@ -53,6 +56,7 @@ def test_a_complete_config_loads_and_expands_paths(tmp_path: Path) -> None:
         model_endpoint="https://api.anthropic.com/v1/messages",
         model_api_key_file=Path("~/anthropic-key").expanduser(),
         model_prices=(Price("claude-opus-5", 15.0, 75.0),),
+        human_queue=Path("~/human-queue").expanduser(),
     )
     assert not str(config.vault_root).startswith("~")
 
