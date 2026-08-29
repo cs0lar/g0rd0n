@@ -112,9 +112,9 @@ Three things about the bridge that are easy to get wrong:
   and the reverse is rejected. Never intern a bare name. See ADR 0003.
 - **`Bridge.hypothesise` is the only write path**, deliberately. Do not add a `commit`.
 - **`knk`'s `find_conflicts` is `Active`-only**, so `conflicts()` returns nothing while
-  everything g0rd0n writes is a `Hypothesis`. That is faithful pass-through, not a bug to fix
-  in g0rd0n — a missing kernel operation is an issue against `knk`. ADR 0003 records both
-  readings of the gap.
+  everything g0rd0n writes is a `Hypothesis`. That is by design, not a bug to fix: rival
+  hypotheses are not a conflict, they are the ordinary state of an open question. Phase 10
+  is the method's first real caller. See `AGENTS.md` §Phase 2 and ADR 0003.
 
 The kernel tests run against a real `mcp_server`, never a mock, and CI builds `knk` from
 source to get one.

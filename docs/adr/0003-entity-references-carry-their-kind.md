@@ -73,33 +73,36 @@ entity through the bridge.
   reviewer sees, and `test_the_vocabulary_is_exactly_the_twelve_predicates_agents_md_names`
   fails until it is deliberate.
 
-## The find_conflicts gap
+## When find_conflicts starts to matter
 
-AGENTS.md requires `find_conflicts` to be polled after every ingestion pass, with
+AGENTS.md originally required `find_conflicts` to be polled after every ingestion pass, with
 `conflicting_claims_are_surfaced_not_silently_reconciled` as a minimum test. Verified against
 a running `mcp_server`: **knk's `find_conflicts` considers `Active` assertions only.** Every
 claim the bridge writes is a `Hypothesis`, because promotion needs Phase 10's three keys, so
 `find_conflicts` returns nothing at this phase and will keep returning nothing until something
 is promoted.
 
-Two readings, and the choice between them is not the bridge's to make:
+Two readings were possible: that knk should grow status-aware conflict detection — an issue
+filed against knk, never a workaround here — or that the spec was ahead of itself.
 
-1. **knk should grow status-aware conflict detection**, in which case this is an issue filed
-   against knk — never a workaround in g0rd0n, per AGENTS.md's rule that a missing kernel
-   operation is knk's problem.
-2. **The wording in AGENTS.md §Phase 2 and §Phase 6 is ahead of itself**, and conflicts only
-   become meaningful at promotion time. Rival hypotheses are not a conflict; they are the
-   ordinary state of an open question, and the whole portfolio in §Candidate portfolio is
-   built out of them.
+**Resolved in favour of the second: knk's behaviour is correct, and AGENTS.md was changed.**
+Two rival hypotheses are not a conflict; they are the ordinary state of an open question, and
+the whole portfolio in §Candidate portfolio is built out of them. A conflict is two things
+*believed* that cannot both be true, which first becomes possible at promotion. AGENTS.md
+§Phase 2 now says what `find_conflicts` covers and why it is quiet, §Phase 6 records
+disagreement as competing hypotheses with their sources, and §Phase 10 gains the rule this
+implies: a promotion that would put an `Active` assertion into conflict with an existing one
+is blocked and surfaced to the human key, never auto-resolved in either direction.
 
-The second reading is the more likely one, but either way the bridge does the same thing:
-`conflicts()` is a faithful pass-through, and nothing in g0rd0n reconciles anything.
+The bridge is unchanged by the decision: `conflicts()` is a faithful pass-through, and nothing
+in g0rd0n reconciles anything. What it does mean is that the pass-through is finished rather
+than provisional, and that the code Phase 10 will need is a caller for it, not a replacement.
 
-What *is* tested is the half of the invariant g0rd0n owns: two contradictory claims about the
-same subject and predicate both persist, each keeping its own id, confidence, and provenance,
-and both readable afterwards. Nothing is averaged, preferred for being newer, or dropped. The
-test also asserts that `conflicts()` is currently empty, so the day the kernel's behaviour
-changes, it says so rather than passing silently.
+What *is* tested here is the half of the invariant g0rd0n owns at this phase: two contradictory
+claims about the same subject and predicate both persist, each keeping its own id, confidence,
+and provenance, and both readable afterwards. Nothing is averaged, preferred for being newer,
+or dropped. The test also asserts that `conflicts()` is currently empty, so the day the
+kernel's behaviour changes, it says so rather than passing silently.
 
 ## Two smaller decisions
 
