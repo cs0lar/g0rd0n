@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.local/schemas/budget.schema.json",
+  "title": "Budget",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "scope_kind", "budget_class", "hard_limit", "soft_limit", "stop_conditions"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "scope_kind": {"enum": ["program", "session"]},
+    "budget_class": {"enum": ["tiny", "small", "medium", "large", "exceptional"]},
+    "hard_limit": {"$ref": "#/$defs/ceiling"},
+    "soft_limit": {"$ref": "#/$defs/ceiling"},
+    "stop_conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["metric", "threshold", "description"],
+        "properties": {
+          "metric": {"enum": ["currency_micros", "tokens", "calls", "wall_time_ms", "actions", "failures"]},
+          "threshold": {"type": "integer", "minimum": 1},
+          "description": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "parent_id": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "ceiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency_micros": {"type": ["integer", "null"], "minimum": 0},
+        "tokens": {"type": ["integer", "null"], "minimum": 0},
+        "calls": {"type": ["integer", "null"], "minimum": 0},
+        "wall_time_ms": {"type": ["integer", "null"], "minimum": 0}
+      }
+    }
+  }
+}
