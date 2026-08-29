@@ -14,6 +14,9 @@ mcp_server = "~/knk/build/mcp_server"
 [vault]
 root = "~/vault"
 
+[ledger]
+journal = "~/ledger.jsonl"
+
 [budget]
 session_usd = 5.0
 campaign_usd = 50.0
@@ -37,6 +40,7 @@ def test_a_complete_config_loads_and_expands_paths(tmp_path: Path) -> None:
         kernel_storage_root=Path("~/kernel").expanduser(),
         kernel_mcp_server=Path("~/knk/build/mcp_server").expanduser(),
         vault_root=Path("~/vault").expanduser(),
+        ledger_journal=Path("~/ledger.jsonl").expanduser(),
         session_usd=5.0,
         campaign_usd=50.0,
         standing_usd=500.0,

@@ -5,7 +5,8 @@ from pathlib import Path
 import pytest
 
 from g0rd0n import __version__, cli
-from g0rd0n.config import Config
+from g0rd0n.config import Config, load
+from g0rd0n.ledger import Cost, open_session
 
 
 def config_for(tmp_path: Path) -> Config:
@@ -13,6 +14,7 @@ def config_for(tmp_path: Path) -> Config:
         kernel_storage_root=tmp_path / "kernel",
         kernel_mcp_server=tmp_path / "mcp_server",
         vault_root=tmp_path / "vault",
+        ledger_journal=tmp_path / "ledger" / "ledger.jsonl",
         session_usd=5.0,
         campaign_usd=50.0,
         standing_usd=500.0,
@@ -31,6 +33,9 @@ mcp_server = "{tmp_path / "mcp_server"}"
 [vault]
 root = "{tmp_path / "vault"}"
 
+[ledger]
+journal = "{tmp_path / "ledger" / "ledger.jsonl"}"
+
 [budget]
 session_usd = 5.0
 campaign_usd = 50.0
@@ -48,7 +53,12 @@ def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path
     """Phase 0 must be runnable on a machine where nothing has been set up yet."""
     checks = cli.doctor(config_for(tmp_path))
 
-    assert [check.name for check in checks] == ["kernel storage", "knk mcp_server", "vault"]
+    assert [check.name for check in checks] == [
+        "kernel storage",
+        "knk mcp_server",
+        "vault",
+        "ledger",
+    ]
     assert not any(check.ok for check in checks)
     assert all(check.detail for check in checks), "a failing check must say what to do"
 
@@ -56,6 +66,7 @@ def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path
 def test_doctor_passes_when_everything_is_where_the_config_says(tmp_path: Path) -> None:
     (tmp_path / "kernel").mkdir()
     (tmp_path / "vault").mkdir()
+    (tmp_path / "ledger").mkdir()
     server = tmp_path / "mcp_server"
     server.write_text("#!/bin/sh\n", encoding="utf-8")
     server.chmod(0o755)
@@ -66,6 +77,7 @@ def test_doctor_passes_when_everything_is_where_the_config_says(tmp_path: Path) 
 def test_doctor_fails_a_kernel_binary_that_is_not_executable(tmp_path: Path) -> None:
     (tmp_path / "kernel").mkdir()
     (tmp_path / "vault").mkdir()
+    (tmp_path / "ledger").mkdir()
     (tmp_path / "mcp_server").write_text("", encoding="utf-8")
 
     failed = [check for check in cli.doctor(config_for(tmp_path)) if not check.ok]
@@ -104,9 +116,66 @@ def test_config_prints_what_was_actually_loaded(
     assert "session 5 / campaign 50 / standing 500" in out
 
 
-def test_the_cli_does_nothing_yet_loudly_and_correctly() -> None:
-    """Phase 0's review checklist, as a test. Phase 1 changes this line deliberately."""
-    assert set(cli.COMMANDS) == {"version", "doctor", "config"}
+def test_cost_answers_before_anything_has_been_spent(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Phase 1's review checklist: one command, answerable before the system has run."""
+    assert cli.main(["--config", str(write_config(tmp_path)), "cost"]) == 0
+    assert "nothing has been spent" in capsys.readouterr().out.lower()
+
+
+def test_cost_reports_what_a_session_spent(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = write_config(tmp_path)
+    with open_session(load(config_path), campaign="c-1", phase="1") as ledger:
+        ledger.spend(ledger.reserve("w-001", Cost(usd=2.0), "referee"), Cost(usd=1.25))
+
+    assert cli.main(["--config", str(config_path), "cost"]) == 0
+
+    out = capsys.readouterr().out
+    assert "w-001" in out
+    assert "$1.250" in out
+
+
+def test_cost_groups_by_what_it_is_asked_to(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = write_config(tmp_path)
+    with open_session(load(config_path), campaign="c-1", phase="1") as ledger:
+        ledger.spend(ledger.reserve("w-001", Cost(usd=2.0), "referee"), Cost(usd=1.25))
+
+    assert cli.main(["--config", str(config_path), "cost", "--by", "agent"]) == 0
+    assert "referee" in capsys.readouterr().out
+
+
+def test_cost_refuses_a_grouping_it_does_not_have() -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["cost", "--by", "vibes"])
+
+    assert exit_info.value.code == 2
+
+
+def test_a_damaged_journal_is_an_error_message_not_a_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = write_config(tmp_path)
+    journal = load(config_path).ledger_journal
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    journal.write_text("{not json\n", encoding="utf-8")
+
+    assert cli.main(["--config", str(config_path), "cost"]) == 1
+    assert "ledger:" in capsys.readouterr().err
+
+
+def test_dry_run_is_accepted_and_changes_nothing_yet(tmp_path: Path) -> None:
+    """The flag exists and is honest: no command spends, so today it is a no-op."""
+    assert cli.main(["--config", str(write_config(tmp_path)), "--dry-run", "cost"]) == 0
+
+
+def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
+    """Phase 0's review checklist, still asked. Each phase widens this line deliberately."""
+    assert set(cli.COMMANDS) == {"version", "doctor", "config", "cost"}
 
 
 def test_no_command_is_a_usage_error() -> None:

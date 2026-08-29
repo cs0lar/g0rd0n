@@ -18,6 +18,12 @@ mcp_server = "~/development/c++/knk/build/mcp_server"
 # scratch, never read back as fact.
 root = "~/.local/share/g0rd0n/vault"
 
+[ledger]
+# The append-only record of every reservation, spend, and settlement (Phase 1). Written
+# before any total is believed; the `g0rd0n cost` report is derived from it and stores
+# nothing of its own.
+journal = "~/.local/share/g0rd0n/ledger.jsonl"
+
 [budget]
 # The three caps from AGENTS.md, in US dollars, smallest first. They must nest.
 # Exceeding one raises BudgetExhausted and settles cleanly (Phase 1).
