@@ -27,6 +27,10 @@ Phase 02 adds a dependency-free, hash-chained research ledger in
 evidence in a content-addressed artifact directory; see
 `docs/research-ledger.md` for its invariants and usage model.
 
+Phase 03 adds the replaceable `KnowledgeStore` boundary under
+`g0rd0n/knowledge/`, with contract-equivalent in-memory and `knk` MCP adapters.
+See `docs/knowledge-store.md` for the supported temporal assertion model.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
