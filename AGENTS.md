@@ -455,6 +455,7 @@ External systems belong behind adapters.
 # 12. Roadmap — one phase = one pull request
 
 The roadmap intentionally builds the scientific spine before autonomous orchestration.
+The root branch for this project is `feature/gpt`; every PR will target that branch.
 
 ---
 
