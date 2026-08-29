@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.local/schemas/mission.schema.json",
+  "title": "MissionSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "question", "interpretation", "target_continuous_power_watts", "baselines", "criteria", "glossary"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1},
+    "interpretation": {"const": "resource_bounded_separation"},
+    "target_continuous_power_watts": {"type": "number", "exclusiveMinimum": 0},
+    "baselines": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "family", "version_policy", "reproducibility_requirements"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "family": {"enum": ["transformer", "recurrent_neural_network", "convolutional_neural_network", "state_space_model", "neural_memory_system"]},
+          "version_policy": {"type": "string", "minLength": 1},
+          "reproducibility_requirements": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "dimension", "verification", "indicator", "threshold", "falsifier"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1},
+          "dimension": {"$ref": "#/$defs/dimension"},
+          "verification": {"enum": ["measurement", "formal_check"]},
+          "indicator": {"type": "string", "minLength": 1},
+          "threshold": {"type": "string", "minLength": 1},
+          "falsifier": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "definition", "excludes"],
+        "properties": {
+          "term": {"$ref": "#/$defs/dimension"},
+          "definition": {"type": "string", "minLength": 1},
+          "excludes": {"type": "array", "items": {"$ref": "#/$defs/dimension"}, "uniqueItems": true}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "dimension": {
+      "enum": ["computability", "complexity", "learnability", "generality", "autonomy", "efficiency", "physical_realizability"]
+    }
+  }
+}

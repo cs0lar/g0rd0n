@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.local/schemas/research-object.schema.json",
+  "title": "ResearchObject",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "title", "content", "provenance"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "kind": {
+      "enum": ["question", "definition", "assumption", "hypothesis", "prediction", "experiment", "observation", "result", "claim", "counterexample", "proof_attempt", "proof", "failure", "decision", "research_program"]
+    },
+    "title": {"type": "string", "minLength": 1},
+    "content": {"type": "object"},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor", "created_at", "source"],
+      "properties": {
+        "actor": {"type": "string", "minLength": 1},
+        "created_at": {"type": "string", "format": "date-time"},
+        "source": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
