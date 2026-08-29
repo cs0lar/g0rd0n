@@ -43,6 +43,11 @@ Phase 06 adds durable budget governance under `g0rd0n/budget/`: program and
 session limits, concurrency-safe maximum-cost reservations, stop conditions,
 hash-chained cost events, and estimated-versus-actual Markdown reports.
 
+Phase 07 adds the minimal closed research loop under `g0rd0n/governor/`. It
+improves questions, tests competing hypotheses with cheap discriminating
+experiments, preserves evidence, updates statuses, and makes explicit
+stop/continue/escalate decisions through budgeted resources.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
