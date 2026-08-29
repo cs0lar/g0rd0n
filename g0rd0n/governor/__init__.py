@@ -16,10 +16,28 @@ from .adversarial import (
 from .governor import GovernorConfig, MinimalResearchGovernor
 from .models import CycleDecision, CycleOutcome, ExperimentProposal
 from .selection import InformationGainSelector, RandomSelector
+from .topology import (
+    AdaptiveResourceTopology,
+    Allocation,
+    AllocationStrategy,
+    FixedResourcePolicy,
+    PerformanceObservation,
+    PolicyComparison,
+    ResourceStrategyProfile,
+    StrategyCheckpoint,
+    TopologyAction,
+    TopologyActionKind,
+    Workload,
+    evaluate_policy,
+    paired_policy_comparison,
+)
 
 __all__ = [
     "AdversarialOutcome",
     "AdversarialScienceLoop",
+    "AdaptiveResourceTopology",
+    "Allocation",
+    "AllocationStrategy",
     "Candidate",
     "CandidateAssessment",
     "CandidateStatus",
@@ -28,12 +46,22 @@ __all__ = [
     "ExperimentProposal",
     "EvidenceUpdate",
     "FalsifyingExperiment",
+    "FixedResourcePolicy",
     "GovernorConfig",
     "InformationGainSelector",
     "MinimalResearchGovernor",
     "NoveltyIndex",
+    "PerformanceObservation",
+    "PolicyComparison",
     "RandomSelector",
     "RedTeamReview",
     "RoleAssignment",
     "ScientificRole",
+    "ResourceStrategyProfile",
+    "StrategyCheckpoint",
+    "TopologyAction",
+    "TopologyActionKind",
+    "Workload",
+    "evaluate_policy",
+    "paired_policy_comparison",
 ]
