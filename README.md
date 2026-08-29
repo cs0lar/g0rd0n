@@ -52,6 +52,11 @@ Phase 08 adds the baseline laboratory under `g0rd0n/evaluation/`: pinned
 manifests, seeded benchmark execution, environment/resource capture, paired
 statistics, Pareto reporting, and a one-command toy reproduction example.
 
+Phase 09 adds boundary-aware energy accounting under `g0rd0n/evaluation/`:
+idle/active power, per-task and per-update energy, energy-delay product,
+uncertainty-bearing projections, synthetic meters, and optional Linux RAPL
+package measurement. Energy Pareto comparisons reject mismatched boundaries.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
