@@ -1,9 +1,10 @@
 """The command line: the only place that reads a config file and the only place that exits.
 
-Five commands, and no more. `version` says what is installed, `config` says what was loaded,
-`doctor` says what is missing, `cost` says what was spent and on which claim, and `vault`
-rebuilds the projection. None of them spends anything: the phases so far build the machine
-that prices work, not work to price.
+Six commands, and no more. `version` says what is installed, `config` says what was loaded,
+`doctor` says what is missing, `cost` says what was spent and on which claim, `vault`
+rebuilds the projection, and `charter` shows the current question and puts it into the
+kernel. None of them spends anything: the phases so far build the machine that prices work,
+not work to price.
 
 This is also the one place a `BudgetExhausted` is caught. Everywhere else it propagates, so
 that `open_session` can settle what is open on its way past.
@@ -24,6 +25,8 @@ from typing import NamedTuple
 from g0rd0n import __version__, vault
 from g0rd0n.cells import model
 from g0rd0n.config import Config, ConfigError, load
+from g0rd0n.cortex import charter as charter_document
+from g0rd0n.cortex.charter import CharterError
 from g0rd0n.kernel import KernelError
 from g0rd0n.kernel import connect as connect_kernel
 from g0rd0n.ledger import BudgetExhausted, JournalError, LedgerError
@@ -41,11 +44,16 @@ COMMANDS: dict[str, str] = {
     "config": "print the resolved configuration",
     "cost": "report what has been spent, and on which claim",
     "vault": "rebuild the Obsidian vault as a projection of the kernel",
+    "charter": "show the well-posed question, or put a signed one into the kernel",
 }
 
 #: `vault` takes exactly one action today. It is spelled out rather than implied so that
 #: `g0rd0n vault` on its own is an error with a list, not a rebuild nobody asked for.
 VAULT_ACTIONS = ("rebuild",)
+
+#: Same, for `charter`. `show` reads the two documents and says what they fix; `commit` is
+#: the gated one — it refuses an unsigned charter and refuses to write the same one twice.
+CHARTER_ACTIONS = ("show", "commit")
 
 
 class Check(NamedTuple):
@@ -71,6 +79,7 @@ def doctor(config: Config) -> list[Check]:
         _directory("human queue", config.human_queue),
         _api_key(config),
         _endpoint(config),
+        _charter(config),
     ]
 
 
@@ -112,6 +121,12 @@ def build_parser() -> argparse.ArgumentParser:
                 choices=VAULT_ACTIONS,
                 help="drop the vault and project it again from the kernel",
             )
+        if name == "charter":
+            subparser.add_argument(
+                "action",
+                choices=CHARTER_ACTIONS,
+                help="print the current charter, or commit a signed one to the kernel",
+            )
     return parser
 
 
@@ -145,9 +160,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "vault":
             return _vault(config, dry_run=args.dry_run)
+        if args.command == "charter":
+            return _charter_command(config, args.action, dry_run=args.dry_run)
         return _report(doctor(config))
     except BudgetExhausted as exc:
         print(f"budget: {exc}", file=sys.stderr)
+        return 1
+    except CharterError as exc:
+        print(f"charter: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
         print(f"ledger: {exc}", file=sys.stderr)
@@ -182,6 +202,62 @@ def _vault(config: Config, *, dry_run: bool) -> int:
     verb = "would write" if dry_run else "wrote"
     print(f"{verb} {done.notes} files to {config.vault_root}")
     return 0
+
+
+def _charter_command(config: Config, action: str, *, dry_run: bool) -> int:
+    """Show the current question, or put it into the kernel.
+
+    `commit` under `--dry-run` does every check and touches no kernel, so "would this be
+    accepted?" is answerable without a running `knk` and without writing anything.
+    """
+    current = charter_document.load(config.charter_path, config.charter_definitions)
+    if action == "show":
+        _print_charter(config, current)
+        return 0
+
+    if dry_run:
+        print(f"would commit {current.name}: {len(charter_document.ELEMENTS)} asks edges")
+        if current.supersedes is not None:
+            print(f"...and {len(current.criticisms)} refines edges to {current.supersedes}")
+        return 0
+    with connect_kernel(config) as bridge:
+        committed = charter_document.commit(bridge, current)
+    print(f"committed {current.name} as {len(committed)} assertions")
+    return 0
+
+
+def _print_charter(config: Config, current: charter_document.Charter) -> None:
+    signature = f"signed by {current.signatory}" if current.signed else "UNSIGNED"
+    print(f"charter          {current.name}  ({signature})")
+    print(f"file             {config.charter_path}")
+    print(f"definitions      {current.definitions}  ({config.charter_definitions})")
+    print(f"supersedes       {current.supersedes or '(nothing: this is the first charter)'}")
+    for criticism in current.criticisms:
+        print(f"  criticism      {criticism}")
+    for heading, body in current.elements.items():
+        print(f"\n## {heading}\n{body}")
+    if not current.signed:
+        print(
+            f"\nUnsigned. A human reviewer signs the Charter before it can enter the kernel: "
+            f"add a '## {charter_document.SIGNATURE}' section naming you, the date, and "
+            f"{current.name}."
+        )
+
+
+def _charter(config: Config) -> Check:
+    """Is there a well-posed question, does it agree with its definitions, and did a human
+    sign it?
+
+    Unsigned is a failing check rather than a note. AGENTS.md §Phase 5 makes the signature a
+    gate, and a gate that reports itself as fine when it is shut is not a gate.
+    """
+    try:
+        current = charter_document.load(config.charter_path, config.charter_definitions)
+    except CharterError as exc:
+        return Check("charter", False, str(exc))
+    if not current.signed:
+        return Check("charter", False, f"{current.name} is unsigned (see `g0rd0n charter show`)")
+    return Check("charter", True, f"{current.name}, signed by {current.signatory}")
 
 
 def _directory(name: str, path: Path) -> Check:
@@ -247,4 +323,6 @@ def _print_config(path: Path, config: Config) -> None:
         f" / campaign {config.campaign_usd:g}"
         f" / standing {config.standing_usd:g}"
     )
+    print(f"charter          {config.charter_path}")
+    print(f"definitions      {config.charter_definitions}")
     print(f"allowlist        {allowlist}")

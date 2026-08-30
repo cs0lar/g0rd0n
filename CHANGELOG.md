@@ -5,6 +5,63 @@ All notable changes to this project are recorded here. Phases refer to the roadm
 
 ## [Unreleased]
 
+### Added — Phase 5: The Question Engine
+
+- `CHARTER.md` — the well-posed version of the task, superseding the seed framing in
+  `AGENTS.md` §The Question with six criticisms attached. It fixes the separation shape (S4,
+  a defended fourth: capability at a matched energy budget), the resource held fixed (joules
+  at the wall, split into an inference budget `B` and a preparation budget `P` amortised over
+  a declared deployment population `N`), three task families, the capability metric, the
+  energy metric, the energy instrument, and the matched-capability protocol.
+- `docs/charter/definitions.md` — ten formal definitions, each with a worked example. A
+  definition that cannot be applied to one is rejected on the way in.
+- `src/g0rd0n/cortex/charter.py` — the engine. A charter is versioned by the hash of its own
+  canonical substance, so it cannot be edited: an edit is a different charter. Sections are a
+  closed vocabulary, prose outside them is refused, and every required section must say
+  something.
+- Supersession: `Supersedes` and `Criticisms` travel together in both directions, and each
+  criticism becomes its own `refines` edge carrying its text in provenance. There is no way to
+  stop asking the question a given way without writing down why.
+- The signature is the one section outside the version hash and names the version it signed.
+  A signature naming a different one is a hard error, not a charter quietly treated as
+  unsigned. `commit` refuses an unsigned charter, and refuses to commit the same one twice.
+- The Charter names its definitions file by hash, so redefining a term supersedes the Charter
+  and costs it a fresh signature.
+- `g0rd0n charter show|commit`, a `[charter]` config section, and a `doctor` check that reports
+  an unsigned charter as a failing check — it is a gate, and a gate that reports itself as fine
+  when it is shut is not a gate.
+- See `docs/adr/0007-the-charter-is-hashed-substance-with-a-signature-outside-it.md`.
+
+### Added — Phase 4: The Cell Runtime (4a and 4b)
+
+- `Cell` as data — a versioned `Playbook`, a tool allowlist, a typed output schema, and a
+  budget reservation, with no base class. `runtime.run` is a function: reserve, converse,
+  check, record, settle.
+- A tool outside the allowlist and output failing the schema both end the run. Nothing is
+  retried, and a failed run is still recorded — the transcript is interned and the `plays`
+  edge committed on the way out, with settlement in the inner `finally`.
+- `model.py` — the `Model` seam, a hand-rolled Anthropic Messages provider, and the network
+  allowlist checked immediately before the socket opens. No default model price: an unpriced
+  model refuses to run.
+- `graph.py` — composition as a `dict[str, Node]`, with `$name` substitution via
+  `string.Template`. Ready nodes run in name order, so two identical graphs produce identical
+  ledgers.
+- `human.py` — a person as an instrument: a question, a deadline, a declared fallback, and a
+  `FileDrop` asker. The fallback covers the deadline and nothing else; `Run.fell_back` says
+  which happened.
+- See `docs/adr/0005-a-cell-is-data-and-a-failed-run-stays-failed.md` and
+  `docs/adr/0006-composition-is-a-dict-and-a-person-is-a-cell.md`.
+
+### Added — Phase 3: The Vault
+
+- `vault/note.py` — the projection as a **pure** function `Snapshot -> {path: text}`, so
+  determinism is checkable by calling a function twice. No rebuild timestamp anywhere; set
+  derived content is sorted before rendering.
+- `vault/projector.py` — the impure half: read the kernel, compare, drop, write. `g0rd0n vault
+  rebuild` refuses any non-empty directory without a `.g0rd0n-vault` marker, and `--dry-run`
+  says what it would overwrite without paying for it.
+- See `docs/adr/0004-the-vault-is-a-pure-function-of-the-kernel.md`.
+
 ### Added — Phase 2: The Kernel Bridge
 
 - An MCP stdio client speaking JSON-RPC 2.0 to `knk`'s `mcp_server` as a subprocess. g0rd0n
