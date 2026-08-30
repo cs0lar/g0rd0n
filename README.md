@@ -1,91 +1,137 @@
 # g0rd0n
 
-`g0rd0n` is a scientific research system for finding and testing computable
-cognitive architectures under explicit capability, learning, resource, and
-energy bounds. The project treats resource-bounded separation—not unrestricted
-computability—as its default interpretation of “more powerful.”
+`g0rd0n` is an experimental scientific orchestration system for formulating,
+testing, and auditing resource-bounded alternatives to contemporary neural
+architectures. Its central question is not whether one universal computer can
+compute something another cannot, but whether a computable architecture can
+show a strict capability advantage under explicit limits on data, memory,
+compute, adaptation, latency, or energy.
 
-## Phase 01
+> **Project status:** early research prototype. The repository provides tested
+> scientific infrastructure and toy results; it does not contain AGI and makes
+> no general superiority or 20 W hardware claim.
 
-This phase defines the falsifiable contract on which later orchestration will
-depend:
+## Why g0rd0n?
 
-- `config/mission.json` is the canonical, machine-readable mission.
-- `g0rd0n/core/` contains dependency-free typed models and validation.
-- `schemas/` documents the stable JSON shapes for research objects.
-- `docs/` records vocabulary, baseline families, and decision rationale.
+Research claims are easy to overstate when questions, costs, failed experiments,
+and changing assumptions live in separate systems. g0rd0n keeps them connected:
 
-Validate the current phase with:
+- immutable research events and content-addressed evidence;
+- humans, models, programs, provers, and hardware behind one permissioned
+  resource interface;
+- hard and soft budgets with estimated-versus-actual cost reports;
+- deterministic experiment selection and adversarial falsification;
+- reproducible baselines, energy boundaries, and proof artifacts;
+- checkpointed, reversible adaptation of resource-allocation strategies.
+
+The design favors small, inspectable mechanisms over a heavyweight agent
+framework. Roles are data, claims retain proof obligations, and negative results
+are first-class outputs.
+
+## Getting started
+
+Requirements: Python 3.12 or newer. Runtime code has no third-party dependencies.
 
 ```bash
+git clone https://github.com/cs0lar/g0rd0n.git
+cd g0rd0n
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
 python -m unittest discover -s tests -v
-python -m g0rd0n validate config/mission.json
 ```
 
-Phase 02 adds a dependency-free, hash-chained research ledger in
-`g0rd0n/research/`. It rebuilds state from immutable JSONL events and keeps raw
-evidence in a content-addressed artifact directory; see
-`docs/research-ledger.md` for its invariants and usage model.
+Validate the mission and reproduce the first discovery campaign:
 
-Phase 03 adds the replaceable `KnowledgeStore` boundary under
-`g0rd0n/knowledge/`, with contract-equivalent in-memory and `knk` MCP adapters.
-See `docs/knowledge-store.md` for the supported temporal assertion model.
+```bash
+python -m g0rd0n validate config/mission.json
+python -m g0rd0n.campaigns run campaigns/first-discovery/preregistration.json
+```
 
-Phase 04 adds a deterministic Obsidian projection in `g0rd0n/projection/`.
-Generated notes preserve explicit human-owned regions, use stable wikilinks, and
-copy hash-verified evidence into the vault; see `docs/obsidian-projection.md`.
+The campaign exhaustively tests a two-bit event-driven candidate. It succeeds
+on online parity but is falsified for exact delayed recall at length three,
+narrowing the next question to adaptively gated external memory.
 
-Phase 05 adds the uniform resource registry and invocation boundary under
-`g0rd0n/resources/`, including permissions, rate limits, timeout/cancellation,
-context validation, deterministic fakes, and attributable per-invocation costs.
+For a guided walkthrough, including human resources, budgets, governance, and
+self-improvement, read [Getting Started](docs/getting-started.md).
 
-Phase 06 adds durable budget governance under `g0rd0n/budget/`: program and
-session limits, concurrency-safe maximum-cost reservations, stop conditions,
-hash-chained cost events, and estimated-versus-actual Markdown reports.
+## Architecture
 
-Phase 07 adds the minimal closed research loop under `g0rd0n/governor/`. It
-improves questions, tests competing hypotheses with cheap discriminating
-experiments, preserves evidence, updates statuses, and makes explicit
-stop/continue/escalate decisions through budgeted resources.
+```text
+Mission + question
+       |
+Research governor ---- Budget engine
+       |                    |
+Resource registry      Cost ledger
+(human/model/tool)          |
+       |                    |
+       +---- Evidence ledger + KnowledgeStore
+                         |
+              evaluation / proof / vault views
+```
 
-Phase 08 adds the baseline laboratory under `g0rd0n/evaluation/`: pinned
-manifests, seeded benchmark execution, environment/resource capture, paired
-statistics, Pareto reporting, and a one-command toy reproduction example.
+Core packages are organized by responsibility:
 
-Phase 09 adds boundary-aware energy accounting under `g0rd0n/evaluation/`:
-idle/active power, per-task and per-update energy, energy-delay product,
-uncertainty-bearing projections, synthetic meters, and optional Linux RAPL
-package measurement. Energy Pareto comparisons reject mismatched boundaries.
+| Path | Purpose |
+| --- | --- |
+| `g0rd0n/research/` | Immutable events, replay, provenance, and artifacts |
+| `g0rd0n/resources/` | Uniform capabilities, permissions, and invocation |
+| `g0rd0n/budget/` | Preflight limits and durable cost accounting |
+| `g0rd0n/governor/` | Question, experiment, adversarial, and allocation policies |
+| `g0rd0n/evaluation/` | Reproducible baselines, statistics, and energy accounting |
+| `g0rd0n/programs/` | Resumable, human-gated research programs |
+| `g0rd0n/proofs/` | Formal claims, proof artifacts, and verification |
+| `g0rd0n/campaigns/` | Pre-registered mission-facing investigations |
 
-Phase 10 adds executable candidate descriptions under `g0rd0n/paradigms/`.
-Typed `ParadigmSpec` documents architecture, assumptions, claims, energy
-hypotheses, and falsifiers while a common runner and benchmark adapter keep the
-evaluation harness paradigm-neutral.
+JSON contracts live in `schemas/`; reproducible inputs live in `config/`,
+`benchmarks/`, `proofs/`, and `campaigns/`.
 
-Phase 11 adds an adversarial science loop under `g0rd0n/governor/`. Roles remain
-data over a shared backend while candidate deduplication, competing explanations,
-cheap falsifiers, evidence-weight updates, replication, and stopping rules make
-hypothesis promotion explicitly resistant to confirmation bias.
+## Reproducible commands
 
-Phase 12 adds checkpointed adaptive resource topology under `g0rd0n/governor/`.
-It learns progress per total cost by workload family, activates or reuses useful
-resources, retires consistently poor ones, and compares itself with fixed
-scheduling on held-out paired workloads.
+```bash
+# Run a pinned toy baseline
+python -m g0rd0n.evaluation run benchmarks/manifests/toy-affine-candidate.json
 
-Phase 13 adds formal claims and verifier adapters under `g0rd0n/proofs/`, plus
-content-addressed proof artifacts, counterexample search, reusable complexity
-bounds, and an independently checkable toy membership-query separation theorem.
+# Independently check the bundled toy separation proof
+python -m g0rd0n.proofs verify proofs/toy-direct-address-membership.json
 
-Phase 14 adds bounded, resumable research programs under `g0rd0n/programs/`.
-Hash-chained session checkpoints preserve queues, review gates, retries, budget
-decisions, evidence, failures, and complete end-of-session resource reports.
+# Compile and test all Python modules
+python -m compileall -q g0rd0n tests
+python -m unittest discover -s tests -v
+```
 
-Phase 15 runs the first mission-facing campaign under `g0rd0n/campaigns/`. A
-pre-registered exhaustive test falsifies fixed-state sparse computation as a
-general exact-recall solution, stops before expensive Transformer evaluation,
-and narrows the next question to adaptively gated external memory.
+Linux RAPL energy tests run only when readable package counters are available;
+otherwise that host-specific test is skipped.
 
-The contract intentionally makes failure possible. A candidate is not promoted
-unless it is executable, evaluated across heterogeneous task families, strictly
-better than named baselines under a declared resource bound, energy-accounted,
-and paired with observations that would falsify it.
+## Scientific boundaries
+
+- Resource-bounded separation is the default interpretation of “more capable.”
+- Logical operation counts are not silently converted into joules or watts.
+- Adaptive scheduling has only synthetic evidence so far; fixed orchestration
+  remains the conservative default for real research.
+- The `knk` integration is optional and replaceable through `KnowledgeStore`.
+- External providers require adapters, explicit permissions, and declared costs.
+
+See [AGENTS.md](AGENTS.md) for the mission, roadmap, review protocol, and full
+definition of done. Focused design notes are indexed in [`docs/`](docs/).
+
+## Contributing
+
+Open an issue before undertaking a large experiment or abstraction. Keep changes
+small, deterministic where practical, and paired with the cheapest meaningful
+test. Pull requests must state the question, hypothesis, evidence, falsifier,
+cost, complexity delta, reversibility, and new knowledge. Preserve unrelated
+work and never erase negative or conflicting evidence.
+
+## Security and responsible operation
+
+Use least privilege. Do not place credentials in manifests, ledgers, fixtures,
+or generated vault notes. Treat model output as a proposal, require explicit
+authorization for external writes, and retain human approval for exceptional
+budgets or consequential actions. Please report sensitive vulnerabilities
+privately to the repository maintainers rather than opening a public issue.
+
+## License
+
+No license file is currently included. Until one is added, the repository is
+publicly visible but no open-source license grant should be assumed.
