@@ -14,6 +14,7 @@ import pytest
 from g0rd0n.config import Config
 from g0rd0n.evidence import channel as channel_module
 from g0rd0n.evidence import citation as citation_module
+from g0rd0n.evidence import seeds
 from g0rd0n.evidence.channel import (
     Finding,
     Ingested,
@@ -449,3 +450,145 @@ def test_the_shipped_allowlist_covers_the_endpoint_citations_resolve_through(
     from g0rd0n.instruments.fetch import check_host
 
     check_host(arxiv("1706.03762").url, shipped.network_allowlist)
+
+
+# --- the seed audit ----------------------------------------------------------------------
+
+
+def audit_stub() -> Stub:
+    """Answers every citation the shipped audit makes, and nothing else."""
+    return Stub(
+        {
+            arxiv(finding.citation.identifier.removeprefix("arxiv:")).url: feed(
+                finding.citation.identifier.removeprefix("arxiv:")
+            )
+            for finding in seeds.AUDIT
+        }
+    )
+
+
+def test_seed_claims_enter_as_unverified_hypotheses(bridge: Bridge, kernel_config: Config) -> None:
+    """AGENTS.md gets no exemption from its own provenance rule.
+
+    Its numbers enter named as its own, at a confidence that says "somebody asserted this",
+    and nothing about being in the constitution makes them evidence.
+    """
+    committed = seeds.commit(bridge)
+
+    assert len(committed) == len(seeds.SEEDS)
+    for seed in seeds.SEEDS:
+        assert belief(seed.claim, bridge=bridge) == pytest.approx(seeds.SEED_CONFIDENCE)
+        assert sources_for(seed.claim, bridge=bridge) == (seeds.SEED_SOURCE,)
+    provenance = bridge.provenance_for(committed[0])
+    assert provenance is not None
+    assert "unverified" in provenance.method
+
+
+def test_seeding_twice_does_not_make_the_constitution_two_sources(
+    bridge: Bridge, kernel_config: Config
+) -> None:
+    seeds.commit(bridge)
+
+    assert seeds.commit(bridge) == ()
+    assert belief(seeds.LANDAUER.claim, bridge=bridge) == pytest.approx(seeds.SEED_CONFIDENCE)
+
+
+def test_the_audit_corroborates_what_a_source_states_and_leaves_the_rest(
+    bridge: Bridge, kernel_config: Config
+) -> None:
+    """Two seeds have primary sources on the allowlist. Three do not, and stay as they were."""
+    done = seeds.audit(
+        bridge=bridge,
+        fetcher=audit_stub(),
+        ledger=ledger_for(kernel_config),
+        wager_id="w-006-seed-audit",
+    )
+    standing = {seed.hypothesis.name: confidence for seed, confidence in done.standing}
+
+    assert standing[seeds.LANDAUER.hypothesis.name] > seeds.SEED_CONFIDENCE
+    assert standing[seeds.TRANSFORMER_CLASS.hypothesis.name] > seeds.SEED_CONFIDENCE
+    for seed, _ in seeds.UNVERIFIED:
+        assert standing[seed.hypothesis.name] == pytest.approx(seeds.SEED_CONFIDENCE)
+
+
+def test_an_unverified_seed_is_not_a_retracted_one(bridge: Bridge, kernel_config: Config) -> None:
+    """Failing to find a source is not finding one that disagrees.
+
+    A channel that conflated the two would delete every claim it happened not to look hard
+    enough for, which is worse than leaving one standing at a confidence that says so.
+    """
+    seeds.audit(
+        bridge=bridge,
+        fetcher=audit_stub(),
+        ledger=ledger_for(kernel_config),
+        wager_id="w-006-seed-audit",
+    )
+
+    for seed, why in seeds.UNVERIFIED:
+        assert belief(seed.claim, bridge=bridge) > 0.0, (
+            f"{seed.hypothesis.name} was retracted, and nothing disagreed with it"
+        )
+        assert sources_for(seed.claim, bridge=bridge) == (seeds.SEED_SOURCE,)
+        assert why.strip(), "an unverified seed says why it is unverified"
+
+
+def test_the_audit_is_rerunnable_without_inflating_confidence(
+    bridge: Bridge, kernel_config: Config
+) -> None:
+    """`g0rd0n evidence audit` twice must not turn two readings of one paper into two papers."""
+    first = seeds.audit(
+        bridge=bridge,
+        fetcher=audit_stub(),
+        ledger=ledger_for(kernel_config),
+        wager_id="w-006-seed-audit",
+    )
+    again = seeds.audit(
+        bridge=bridge,
+        fetcher=audit_stub(),
+        ledger=ledger_for(kernel_config),
+        wager_id="w-006-seed-audit",
+    )
+
+    assert dict(map(reversed, first.standing)) == dict(map(reversed, again.standing))  # type: ignore[arg-type]
+    assert again.seeded == ()
+    assert again.ingested.assertions == ()
+    assert len(again.ingested.skipped) == len(seeds.AUDIT)
+
+
+def test_two_independent_sources_reach_the_ceiling_and_stop(
+    bridge: Bridge, kernel_config: Config
+) -> None:
+    """The transformer seed has two sources. It gets capped, not certain."""
+    done = seeds.audit(
+        bridge=bridge,
+        fetcher=audit_stub(),
+        ledger=ledger_for(kernel_config),
+        wager_id="w-006-seed-audit",
+    )
+    standing = {seed.hypothesis.name: confidence for seed, confidence in done.standing}
+
+    assert standing[seeds.TRANSFORMER_CLASS.hypothesis.name] == pytest.approx(
+        channel_module.CEILING
+    )
+    assert standing[seeds.TRANSFORMER_CLASS.hypothesis.name] < 1.0
+
+
+def test_every_audit_finding_points_at_a_seed_and_says_how_it_was_read() -> None:
+    """A finding that cites nothing in `SEEDS` is auditing something nobody seeded."""
+    hypotheses = {seed.hypothesis for seed in seeds.SEEDS}
+
+    for finding in seeds.AUDIT:
+        assert finding.cites in hypotheses
+        assert finding.claim.object in hypotheses
+        assert len(finding.method) > 60, "'the paper says so' is not an extraction method"
+        assert finding.citation.identifier.startswith("arxiv:")
+
+
+def test_the_shipped_allowlist_can_reach_every_citation_the_audit_makes() -> None:
+    """An audit the shipped config cannot run is an audit nobody can reproduce."""
+    from g0rd0n.config import load
+    from g0rd0n.instruments.fetch import check_host
+
+    shipped = load(Path(__file__).resolve().parents[1] / "config" / "g0rd0n.toml")
+    for finding in seeds.AUDIT:
+        check_host(finding.citation.url, shipped.network_allowlist)

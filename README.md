@@ -30,10 +30,17 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 6a — The Evidence Channel.** `g0rd0n` can price work, remember it with a source
+**Phase 6 — The Evidence Channel.** `g0rd0n` can price work, remember it with a source
 attached, show it to a human as a navigable argument, run an agent, compose several into a
-graph, put a question to a person on the same budget, and now go and get evidence — refusing
-any citation it cannot retrieve. Search and the seed audit are Phase 6b.
+graph, put a question to a person on the same budget, and now go and get evidence — searching
+primary literature, refusing any citation it cannot retrieve, and auditing its own founding
+document against what it finds. The Wager and the Allocator are Phase 7.
+
+The first thing it audited was itself. Of the five unsourced numbers in `AGENTS.md`, two are
+corroborated by primary sources and three could not be verified at all — including the ~20 W
+brain figure the whole question is denominated against, whose primary literature lives on hosts
+nobody allowlisted. Nothing was retracted, because **failing to find a source is not finding
+one that disagrees**. See [`docs/seed-audit.md`](docs/seed-audit.md).
 
 **A fetch that succeeds is not a citation that resolves.** arXiv answers a fabricated
 identifier with HTTP 200 and an empty feed, so a citation declares what its own record must
@@ -91,6 +98,10 @@ uv run g0rd0n --dry-run vault rebuild    # ...and what that would overwrite
 
 uv run g0rd0n charter show               # the current question, and what it fixes
 uv run g0rd0n charter commit             # ...into the kernel, once a human has signed it
+
+uv run g0rd0n evidence search "log-precision transformers"   # primary literature
+uv run g0rd0n evidence seed              # g0rd0n's own unsourced numbers, as hypotheses
+uv run g0rd0n evidence audit             # ...and what a primary source says about each
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,

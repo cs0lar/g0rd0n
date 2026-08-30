@@ -230,9 +230,18 @@ def test_dry_run_is_accepted_and_changes_nothing_yet(tmp_path: Path) -> None:
 
 def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
     """Phase 0's review checklist, still asked. Each phase widens this line deliberately."""
-    assert set(cli.COMMANDS) == {"version", "doctor", "config", "cost", "vault", "charter"}
+    assert set(cli.COMMANDS) == {
+        "version",
+        "doctor",
+        "config",
+        "cost",
+        "vault",
+        "charter",
+        "evidence",
+    }
     assert cli.VAULT_ACTIONS == ("rebuild",)
     assert cli.CHARTER_ACTIONS == ("show", "commit")
+    assert cli.EVIDENCE_ACTIONS == ("search", "seed", "audit")
 
 
 def test_doctor_fails_an_unsigned_charter(tmp_path: Path) -> None:
@@ -291,6 +300,16 @@ def test_a_broken_charter_is_an_error_message_not_a_traceback(
 
     assert cli.main(["--config", str(config_path), "charter", "show"]) == 1
     assert "charter:" in capsys.readouterr().err
+
+
+def test_evidence_search_needs_something_to_search_for(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The one action that takes an argument, refused before any socket opens."""
+    config_path = write_config(tmp_path)
+
+    assert cli.main(["--config", str(config_path), "evidence", "search"]) == 2
+    assert "needs something to search for" in capsys.readouterr().err
 
 
 def test_no_command_is_a_usage_error() -> None:

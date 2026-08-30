@@ -1,7 +1,8 @@
 """Instruments: tools that return results and never commit assertions.
 
-One module so far. `fetch` opens sockets and owns the network allowlist; Phase 6b adds
-`search`, and the bench, the prover, and the sandbox arrive with their own phases.
+Two modules. `fetch` opens sockets and owns the network allowlist; `search` queries arXiv and
+can only hand back papers with identifiers. The bench, the prover, and the sandbox arrive with
+their own phases.
 
 The rule that defines this layer is AGENTS.md §6: **an instrument returns a result, and a
 Cell commits it.** Nothing here imports the bridge, and nothing here decides what is true —
@@ -27,14 +28,26 @@ from g0rd0n.instruments.fetch import (
     Unreachable,
     check_host,
 )
+from g0rd0n.instruments.search import (
+    DEFAULT_LIMIT,
+    Arxiv,
+    Found,
+    Search,
+    SearchError,
+)
 
 __all__ = [
+    "DEFAULT_LIMIT",
     "MAX_BYTES",
+    "Arxiv",
     "FetchError",
     "Fetched",
     "Fetcher",
+    "Found",
     "Http",
     "NetworkRefused",
+    "Search",
+    "SearchError",
     "Unreachable",
     "check_host",
 ]

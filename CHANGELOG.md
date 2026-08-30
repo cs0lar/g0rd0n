@@ -5,6 +5,29 @@ All notable changes to this project are recorded here. Phases refer to the roadm
 
 ## [Unreleased]
 
+### Added — Phase 6b: Search, and the seed audit
+
+- `instruments/search.py` — arXiv's Atom API through the allowlisted fetcher. **A result is a
+  citable identifier, never a passage:** the "prefer primary sources" rule is structural, not
+  advice, because a preprint server's own API cannot return a blog post. Identifiers keep their
+  version, so a claim cites the text it was read from.
+- **A document that parses is not a result list that arrived.** An HTML error page is
+  well-formed XML and came back as "nothing matched" until `parse` began checking the root
+  element is an Atom feed. Feeds carrying `<!DOCTYPE` or `<!ENTITY` are refused outright.
+- The query goes in unquoted: `all:"three word query"` is an exact-phrase match and returns
+  zero results against the live API, which reads as "no such literature exists".
+- `evidence/seeds.py` — the five unsourced numbers in `AGENTS.md` §The Question as data,
+  committed as `Hypothesis` at 0.30 with the constitution named as their source, plus the audit
+  of them against retrieved primary literature.
+- `g0rd0n evidence search|seed|audit`. `audit` is re-runnable and does not inflate confidence.
+- **The audit's result** ([`docs/seed-audit.md`](docs/seed-audit.md)): Landauer's floor and the
+  log-precision-transformer circuit bound are corroborated by primary sources; the three
+  neuroscience figures are not, because their primary literature is on hosts nobody
+  allowlisted. **Nothing was retracted** — a missing source is not a refutation. The ~20 W brain
+  figure the whole question is denominated against is now, on the record, the least supported
+  claim in the kernel.
+- See `docs/adr/0009-search-returns-identifiers-and-a-missing-source-is-not-a-refutation.md`.
+
 ### Added — Phase 6a: The Evidence Channel (resolution and ingestion)
 
 - `instruments/` — the layer that returns results and never commits. `fetch.py` is the only

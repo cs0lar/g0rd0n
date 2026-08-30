@@ -11,12 +11,12 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–6a are built; Phase 6b (search, and the seed audit) is next.** The package is
+**Phases 0–6 are built; Phase 7 (the Wager and the Allocator) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
-  and nothing else.
+  `evidence search|seed|audit`, and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -38,11 +38,12 @@ Not Do Yet**.
   another, and the definitions file it names by hash). Depends on `config`, `kernel`, and
   `cells.playbook` for `version_of`.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
-  owner of the network allowlist). Returns results and commits nothing. Depends on nothing
-  else in `g0rd0n`.
+  owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
+  prose). Returns results and commits nothing. Depends on nothing else in `g0rd0n`.
 - `evidence/` — `citation.py` (resolve: fetch, check, hash, intern), `channel.py` (commit:
-  dedup, corroborate, preserve disagreement, retract). Depends on `instruments`, `kernel`,
-  and `ledger`.
+  dedup, corroborate, preserve disagreement, retract), `seeds.py` (the five unsourced numbers
+  in AGENTS.md §The Question, and the audit of them). Depends on `instruments`, `kernel`, and
+  `ledger`.
 
 Phase 4 is the first phase that calls a model; Phase 6 the first that reaches the open
 network. Phases 1–3 built the machine that prices work, remembers it, and shows it. Phase 5
@@ -246,6 +247,19 @@ Four more things that look arbitrary and are not:
 The network allowlist lives in `instruments/fetch.py`, not beside the model provider, and it
 is re-checked **on every redirect hop** — `doi.org` is allowlisted precisely because it
 redirects.
+
+Two more from 6b, both the same lesson in different costumes:
+
+- **A document that parses is not a result list that arrived.** An HTML error page is
+  well-formed XML, so without a check on the root element a 503 comes back as "nothing
+  matched". `parse` requires an Atom `feed`.
+- **A missing source is not a refutation.** Retraction needs a source that *disagrees*.
+  "I looked and found nothing" leaves the claim standing at its low confidence, with the
+  reason written down in `UNVERIFIED`. See `docs/seed-audit.md` and ADR 0009.
+
+The seed audit's result is worth knowing before touching the Charter: **the ~20 W brain figure
+is the least supported claim in the kernel** (0.30, sourced only to AGENTS.md), because its
+primary literature is journal work on hosts nobody allowlisted.
 
 ## Working rules that differ from ordinary repos
 

@@ -1,9 +1,11 @@
 """The Evidence Channel: where a claim from outside becomes something g0rd0n believes to a degree.
 
-Two modules. `citation` retrieves a reference and refuses to call it resolved unless the bytes
-say what the citation claims they say. `channel` turns resolved findings into assertions —
-corroborating, refusing to launder one source into two, preserving disagreement, and
-withdrawing a claim when a source disagrees with it.
+Three modules. `citation` retrieves a reference and refuses to call it resolved unless the
+bytes say what the citation claims they say. `channel` turns resolved findings into assertions
+— corroborating, refusing to launder one source into two, preserving disagreement, and
+withdrawing a claim when a source disagrees with it. `seeds` is the channel pointed at
+g0rd0n's own constitution: the five unsourced numbers in AGENTS.md §The Question, and what a
+primary source was actually found to say about each.
 
 It sits above `instruments`, which fetch and commit nothing, and below `cortex`, which frames
 the questions these claims answer. It is not `cells`: there is no playbook and no model here.
@@ -36,17 +38,29 @@ from g0rd0n.evidence.citation import (
     arxiv,
     resolve,
 )
+from g0rd0n.evidence.seeds import (
+    SEEDS,
+    UNVERIFIED,
+    Audited,
+    Seed,
+    audit,
+)
 
 __all__ = [
     "CEILING",
+    "SEEDS",
+    "UNVERIFIED",
+    "Audited",
     "Citation",
     "EvidenceError",
     "Finding",
     "Ingested",
     "Retraction",
+    "Seed",
     "Source",
     "UnresolvableCitation",
     "arxiv",
+    "audit",
     "belief",
     "combine",
     "ingest",
