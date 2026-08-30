@@ -28,6 +28,11 @@ All notable changes to this project are recorded here. Phases refer to the roadm
   `Retraction` status and marks the original `Retracted`, so nothing here can make g0rd0n
   believe anything. It requires provenance: a claim needs a source to enter, so it needs one
   to leave.
+- The bridge's write surface is now **pinned structurally** in `tests/test_razor.py`: a table
+  naming each method and the knk tools it may reach, checked by an AST pass. Going from one
+  write path to two turned a bright line into a judgement call, and this puts the argument for
+  a third in a diff rather than in a docstring. A companion test forbids any module above
+  `kernel/` from touching the MCP client directly.
 - See `docs/adr/0008-a-fetch-that-succeeds-is-not-a-citation-that-resolves.md`.
 
 ### Added — Phase 5: The Question Engine

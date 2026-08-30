@@ -97,6 +97,17 @@ one to leave; "we stopped believing this" with nobody's name on it is how a reco
 loses the inconvenient half of its own history. knk's `commit_retraction` takes no source, so
 the bridge pairs it with `record_provenance`, and that pairing exists in exactly one place.
 
+**The write surface is pinned structurally**, in `tests/test_razor.py`, as a table naming each
+method and the knk tools it may reach. Going from one write path to two turned a bright line
+into a judgement call, and a judgement call in a docstring is one nobody re-reads: the next
+person with a good reason inherits the argument shape and no obstacle. `merge_entities` is the
+one to watch — knk offers it, it is "not a belief" by exactly the argument that admits
+`retract`, and it would let g0rd0n silently collapse two entities. The table means a third
+write path fails CI rather than passing review.
+
+The test lives with the Razor rather than in `test_bridge.py` deliberately: the kernel tests
+skip without a built `knk`, and an invariant that can be skipped is one that will be.
+
 ## Why this design
 
 **Against making an unresolvable citation a low-confidence claim.** That is the intuitive move
@@ -129,6 +140,22 @@ happens to the record when it does.
 - **Independence is assumed and unverifiable here.** The ceiling bounds the damage; it does not
   detect the case. Phase 10's referee is where a pile of correlated sources should be attacked.
 - **An orphaned document entity per failed run.** See above; deliberate, and cheap.
+- **The bridge does not enforce what the Evidence Channel enforces.** "A retraction needs a
+  source that resolves" is real in `evidence/channel.py`, which retrieves the citation first.
+  At the bridge, `_check_provenance` only requires kind `source` and a non-empty method, so
+  `bridge.retract(id, Provenance(Ref("source", "because-i-said-so"), "trust me"))` passes.
+  `hypothesise` has the same hole, so it is not new — and it is close to inherent, since the
+  bridge cannot know what "resolved" means without knowing about the Evidence Channel, which
+  would invert the layering. It is sharper for `retract`, because retraction removes.
+- **Retraction is irreversible and asymmetric.** There is no un-retract, and knk refuses to
+  retract an already-retracted assertion. A wrong retraction is permanent: the claim can be
+  re-committed as a *new* assertion, but the original stays `Retracted` and the log then holds
+  one triple twice with different statuses. Recoverable, and muddy.
+- **Two new statuses arrived with no vault work.** `Retracted` and `Retraction` project into a
+  note's `claims:` list as a `status` field, so they are visible — but a retraction carries the
+  *same predicate* as the original, so it reads as another claim at confidence 0.0. Nothing
+  marks the note as withdrawn the way `superseded_by` marks supersession. That belongs to
+  Phase 11's cockpit, which is where "what did we stop believing, and why" gets a display.
 
 ## How it is tested
 
@@ -146,6 +173,12 @@ happens to the record when it does.
   the chain.
 - `a_redirect_off_the_allowlist_is_refused_mid_flight`, against a real `urllib` redirect
   handler rather than by trusting the library.
+- `the_bridge_has_exactly_the_write_paths_it_declares` and
+  `no_module_reaches_past_the_bridge_to_the_kernel_client`, in `tests/test_razor.py`: an AST
+  pass over `bridge.py` matching each method against the knk tools it calls. Structural rather
+  than behavioural on purpose — a test that committed something and checked its status would
+  pass happily beside a newly added `Bridge.merge` that nobody exercised. Both were verified by
+  adding the violation and watching them fail.
 
 Nine invariants were verified by breaking them and watching the right test fail, including the
 two-pass rule, the ceiling, the same-source skip, and the retraction's provenance requirement.

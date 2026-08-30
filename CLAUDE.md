@@ -272,5 +272,10 @@ to the session total; unsourced claims rejected at the bridge; wagers without a 
 rejected; results committed before pre-registration rejected; vault rebuilds deterministically;
 promotion requires all three keys; every module declares a deletion criterion.
 
+Two more structural ones live in `tests/test_razor.py` and parse source rather than running it,
+so they cannot be skipped by a machine without `knk`: the bridge has exactly the write paths
+`WRITE_PATHS` declares (`hypothesise` and `retract`, and a third needs an ADR), and no module
+above `kernel/` touches the MCP client directly.
+
 Tests use `pytest` with temporary directories and a throwaway kernel storage root per test —
 never a fixed path.
