@@ -10,28 +10,32 @@ can be tested without spending money or making network calls.
 
 ## 1. Install and verify
 
-Use Python 3.12 or newer:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then let it
+provision the pinned Python version and locked environment:
 
 ```bash
 git clone https://github.com/cs0lar/g0rd0n.git
 cd g0rd0n
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-python -m unittest discover -s tests -v
-python -m g0rd0n validate config/mission.json
+uv sync --locked
+uv run python -m unittest discover -s tests -v
+uv run python -m g0rd0n validate config/mission.json
 ```
 
 There are no runtime dependencies beyond the standard library. A skipped Linux
 RAPL test means the host does not expose a readable energy counter, not that the
 suite failed.
 
+`pyproject.toml` is the dependency declaration and `uv.lock` is the exact
+resolution used for reproducible development and experiments. Add runtime
+packages with `uv add <package>`, development tools with
+`uv add --dev <package>`, and commit both files whenever resolution changes.
+
 ## 2. Reproduce a scientific result
 
 Run the first repository-local, procedurally pre-registered campaign:
 
 ```bash
-python -m g0rd0n.campaigns run \
+uv run python -m g0rd0n.campaigns run \
   campaigns/first-discovery/preregistration.json
 ```
 
@@ -208,8 +212,9 @@ unresolved uncertainty, and best next question.
 
 ## 9. Where to go next
 
-- Reproduce toy baselines with `python -m g0rd0n.evaluation run <manifest>`.
-- Verify a proof with `python -m g0rd0n.proofs verify <artifact>`.
+- Reproduce toy baselines with
+  `uv run python -m g0rd0n.evaluation run <manifest>`.
+- Verify a proof with `uv run python -m g0rd0n.proofs verify <artifact>`.
 - Read [`paradigm-spec.md`](paradigm-spec.md) before adding an architecture.
 - Read [`energy-accounting.md`](energy-accounting.md) before making efficiency
   comparisons.

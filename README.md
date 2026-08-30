@@ -30,22 +30,23 @@ are first-class outputs.
 
 ## Getting started
 
-Requirements: Python 3.12 or newer. Runtime code has no third-party dependencies.
+Requirements: [uv](https://docs.astral.sh/uv/getting-started/installation/).
+uv installs the pinned Python 3.12 toolchain when necessary, creates the virtual
+environment, and reproduces the dependency set in `uv.lock`.
 
 ```bash
 git clone https://github.com/cs0lar/g0rd0n.git
 cd g0rd0n
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-python -m unittest discover -s tests -v
+uv sync --locked
+uv run python -m unittest discover -s tests -v
 ```
 
 Validate the mission and reproduce the first discovery campaign:
 
 ```bash
-python -m g0rd0n validate config/mission.json
-python -m g0rd0n.campaigns run campaigns/first-discovery/preregistration.json
+uv run python -m g0rd0n validate config/mission.json
+uv run python -m g0rd0n.campaigns run \
+  campaigns/first-discovery/preregistration.json
 ```
 
 The campaign exhaustively tests a two-bit event-driven candidate. It succeeds
@@ -90,15 +91,21 @@ JSON contracts live in `schemas/`; reproducible inputs live in `config/`,
 
 ```bash
 # Run a pinned toy baseline
-python -m g0rd0n.evaluation run benchmarks/manifests/toy-affine-candidate.json
+uv run python -m g0rd0n.evaluation run \
+  benchmarks/manifests/toy-affine-candidate.json
 
 # Independently check the bundled toy separation proof
-python -m g0rd0n.proofs verify proofs/toy-direct-address-membership.json
+uv run python -m g0rd0n.proofs verify \
+  proofs/toy-direct-address-membership.json
 
 # Compile and test all Python modules
-python -m compileall -q g0rd0n tests
-python -m unittest discover -s tests -v
+uv run python -m compileall -q g0rd0n tests
+uv run python -m unittest discover -s tests -v
 ```
+
+Use `uv add <package>` for runtime dependencies and `uv add --dev <package>`
+for development tools. Commit the resulting `pyproject.toml` and `uv.lock`
+changes together; use `uv lock --check` to detect an outdated lockfile.
 
 Linux RAPL energy tests run only when readable package counters are available;
 otherwise that host-specific test is skipped.

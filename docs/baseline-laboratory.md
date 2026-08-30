@@ -17,7 +17,7 @@ exploratory, confirmatory, or only harness validation.
 The bundled lookup baseline is reproduced with:
 
 ```bash
-python -m g0rd0n.evaluation run benchmarks/manifests/toy-lookup-baseline.json
+uv run python -m g0rd0n.evaluation run benchmarks/manifests/toy-lookup-baseline.json
 ```
 
 It emits one JSON result containing all pinned seeds, metrics, modeled operations,
