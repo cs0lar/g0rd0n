@@ -80,6 +80,11 @@ Phase 14 adds bounded, resumable research programs under `g0rd0n/programs/`.
 Hash-chained session checkpoints preserve queues, review gates, retries, budget
 decisions, evidence, failures, and complete end-of-session resource reports.
 
+Phase 15 runs the first mission-facing campaign under `g0rd0n/campaigns/`. A
+pre-registered exhaustive test falsifies fixed-state sparse computation as a
+general exact-recall solution, stops before expensive Transformer evaluation,
+and narrows the next question to adaptively gated external memory.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,

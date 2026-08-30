@@ -1,0 +1,24 @@
+{
+  "campaign_id": "campaign.fixed-state-sparse-recall.v1",
+  "status": "falsified_candidate_class",
+  "execution_command": "python -m g0rd0n.campaigns run campaigns/first-discovery/preregistration.json",
+  "candidate_class": "deterministic sparse event-driven machine with fixed persistent state and no external memory",
+  "sequence_lengths": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "parity_candidate_accuracy": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  "recall_candidate_accuracy": [1.0, 1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 0.00390625],
+  "history_baseline_accuracy": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  "first_falsifying_length": 3,
+  "recall_accuracy_threshold": 0.99,
+  "replicated": true,
+  "replication_hash": "c97f1049951d09439ec6ba157e8599d5c463301e47104e67885080050a2ba9f7",
+  "theorem_obligations": {
+    "state_count": true,
+    "collision": true,
+    "exact_recall_requires_distinct_prefix_states": true,
+    "lower_bound_b_at_least_L": true
+  },
+  "transformer_benchmark_executed": false,
+  "energy_claim": "No joule or 20 W claim; logical state and access counts only.",
+  "stop_reason": "The pre-registered cheap recall falsifier rejected the fixed-state class before paid or trained Transformer evaluation.",
+  "revised_question": "Which adaptive external-memory gating primitives retain sparse constant update cost while allocating information capacity only when exact recall demands it?"
+}

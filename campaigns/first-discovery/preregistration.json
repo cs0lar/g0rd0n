@@ -1,0 +1,62 @@
+{
+  "id": "campaign.fixed-state-sparse-recall.v1",
+  "registered_before_results": true,
+  "registration_scope": "Repository-local procedural pre-registration authored before the first campaign execution; not externally timestamped.",
+  "study_stage": "confirmatory within the declared toy task families",
+  "question": "Can a fixed-size sparse event-driven state machine reduce continual sequence-update and memory-access cost relative to history-scanning attention without sacrificing transfer to exact delayed recall?",
+  "candidate": {
+    "class": "deterministic sparse event-driven machine with fixed persistent state and no external memory",
+    "fixed_state_bits": 2,
+    "rationale": "Fixed state permits constant storage and sparse parity updates, offering a plausible memory-movement advantage on compressible streams."
+  },
+  "baselines": [
+    {
+      "id": "exact-history-scan",
+      "class": "deterministic full-history attention analogue",
+      "scope": "Stores every input and scans the retained history at query time; it is an algorithmic attention control, not a trained Transformer.",
+      "known_shortcuts": ["Hand-coded exact behavior", "Unbounded growth in retained history"],
+      "contamination_risk": "None: exhaustive binary sequences are generated after the algorithms are fixed."
+    },
+    {
+      "id": "trained-causal-transformer-deferred",
+      "class": "trained Transformer baseline",
+      "scope": "Pre-registered for execution only if the candidate survives the information-theoretic recall falsifier.",
+      "planned_configuration": "Decoder-only causal Transformer, 2 layers, 4 heads, d_model=64, seeds 0-9, trained on lengths 1-8 and held out on lengths 9-10 with version and hardware capture at execution.",
+      "known_shortcuts": ["Position-specific memorization", "Training-set enumeration leakage"],
+      "contamination_risk": "High unless held-out lengths and generated sequences remain inaccessible during training."
+    }
+  ],
+  "task_families": ["online parity aggregation", "exact delayed arbitrary recall"],
+  "evaluation": {
+    "sequence_lengths": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "enumeration": "exhaustive over every binary sequence",
+    "replication": "repeat the complete deterministic campaign and compare canonical result hashes",
+    "uncertainty": "No sampling uncertainty because enumeration is exhaustive; external-validity uncertainty remains unrestricted."
+  },
+  "resource_constraints": {
+    "candidate_persistent_state_bits": 2,
+    "maximum_paid_api_calls": 0,
+    "maximum_gpu_seconds": 0,
+    "stop_before_expensive_baseline_if_falsified": true
+  },
+  "energy_boundary": {
+    "status": "logical proxy only",
+    "metrics": ["persistent state bits", "state updates", "history reads"],
+    "prohibition": "Do not infer joules, watts, or a 20 W path from logical counts."
+  },
+  "success_thresholds": {
+    "online_parity_accuracy": 1.0,
+    "exact_recall_accuracy": 0.99,
+    "required_transfer_families": 2
+  },
+  "falsifiers": [
+    "Exact recall accuracy falls below 0.99 for any tested L greater than the fixed state-bit count.",
+    "A pigeonhole lower bound shows exact arbitrary L-bit recall requires at least L persistent information bits."
+  ],
+  "total_campaign_budget": {
+    "budget_class": "tiny",
+    "paid_api_calls": 0,
+    "gpu_seconds": 0,
+    "wall_time_seconds": 10
+  }
+}
