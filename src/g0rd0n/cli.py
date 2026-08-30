@@ -1,10 +1,12 @@
 """The command line: the only place that reads a config file and the only place that exits.
 
-Six commands, and no more. `version` says what is installed, `config` says what was loaded,
+Seven commands, and no more. `version` says what is installed, `config` says what was loaded,
 `doctor` says what is missing, `cost` says what was spent and on which claim, `vault`
-rebuilds the projection, and `charter` shows the current question and puts it into the
-kernel. None of them spends anything: the phases so far build the machine that prices work,
-not work to price.
+rebuilds the projection, `charter` shows the current question and puts it into the kernel,
+and `evidence` searches the literature and audits g0rd0n's own unsourced numbers against it.
+
+`evidence` is the first command that reaches the open network, and the first that costs
+anything — wall-clock, against a wager, through the ledger like everything else.
 
 This is also the one place a `BudgetExhausted` is caught. Everywhere else it propagates, so
 that `open_session` can settle what is open on its way past.
@@ -26,10 +28,15 @@ from g0rd0n import __version__, vault
 from g0rd0n.config import Config, ConfigError, load
 from g0rd0n.cortex import charter as charter_document
 from g0rd0n.cortex.charter import CharterError
-from g0rd0n.instruments import fetch
+from g0rd0n.evidence import seeds
+from g0rd0n.evidence.channel import EvidenceError
+from g0rd0n.evidence.citation import UnresolvableCitation
+from g0rd0n.instruments import fetch, search
+from g0rd0n.instruments.fetch import FetchError
+from g0rd0n.instruments.search import SearchError
 from g0rd0n.kernel import KernelError
 from g0rd0n.kernel import connect as connect_kernel
-from g0rd0n.ledger import BudgetExhausted, JournalError, LedgerError
+from g0rd0n.ledger import BudgetExhausted, JournalError, Ledger, LedgerError
 from g0rd0n.ledger import report as cost_report
 from g0rd0n.vault import VaultError
 
@@ -45,6 +52,7 @@ COMMANDS: dict[str, str] = {
     "cost": "report what has been spent, and on which claim",
     "vault": "rebuild the Obsidian vault as a projection of the kernel",
     "charter": "show the well-posed question, or put a signed one into the kernel",
+    "evidence": "search primary literature, and audit the seed numbers against it",
 }
 
 #: `vault` takes exactly one action today. It is spelled out rather than implied so that
@@ -54,6 +62,11 @@ VAULT_ACTIONS = ("rebuild",)
 #: Same, for `charter`. `show` reads the two documents and says what they fix; `commit` is
 #: the gated one — it refuses an unsigned charter and refuses to write the same one twice.
 CHARTER_ACTIONS = ("show", "commit")
+
+#: `evidence search QUERY` finds papers; `seed` commits AGENTS.md's unsourced numbers as
+#: hypotheses; `audit` resolves what a primary source says about each. `audit` is re-runnable:
+#: the seeds are idempotent and a source already supporting a claim is skipped.
+EVIDENCE_ACTIONS = ("search", "seed", "audit")
 
 
 class Check(NamedTuple):
@@ -127,6 +140,17 @@ def build_parser() -> argparse.ArgumentParser:
                 choices=CHARTER_ACTIONS,
                 help="print the current charter, or commit a signed one to the kernel",
             )
+        if name == "evidence":
+            subparser.add_argument("action", choices=EVIDENCE_ACTIONS, help="what to do")
+            subparser.add_argument(
+                "query", nargs="?", help="what to search for (required by `search`)"
+            )
+            subparser.add_argument(
+                "--limit",
+                type=int,
+                default=search.DEFAULT_LIMIT,
+                help=f"how many results to return (default: {search.DEFAULT_LIMIT})",
+            )
     return parser
 
 
@@ -162,12 +186,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _vault(config, dry_run=args.dry_run)
         if args.command == "charter":
             return _charter_command(config, args.action, dry_run=args.dry_run)
+        if args.command == "evidence":
+            return _evidence(config, args.action, args.query, limit=args.limit)
         return _report(doctor(config))
     except BudgetExhausted as exc:
         print(f"budget: {exc}", file=sys.stderr)
         return 1
     except CharterError as exc:
         print(f"charter: {exc}", file=sys.stderr)
+        return 1
+    except (SearchError, FetchError, UnresolvableCitation, EvidenceError) as exc:
+        print(f"evidence: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
         print(f"ledger: {exc}", file=sys.stderr)
@@ -202,6 +231,51 @@ def _vault(config: Config, *, dry_run: bool) -> int:
     verb = "would write" if dry_run else "wrote"
     print(f"{verb} {done.notes} files to {config.vault_root}")
     return 0
+
+
+#: The wager the seed audit spends against. A string until Phase 7 mints `WagerId`s to point
+#: at; the chain from this dollar to a question is `AGENTS.md` §The Question, which is the
+#: thing being audited.
+AUDIT_WAGER = "w-006-seed-audit"
+
+
+def _evidence(config: Config, action: str, query: str | None, *, limit: int) -> int:
+    """Search the literature, seed g0rd0n's unsourced numbers, or audit them against it."""
+    http = fetch.Http(allowlist=config.network_allowlist)
+    if action == "search":
+        if not query:
+            print("evidence: `search` needs something to search for", file=sys.stderr)
+            return 2
+        for found in search.Arxiv(fetcher=http).find(query, limit=limit):
+            print(f"{found.identifier:<16}  {found.published[:10]}  {found.title}")
+        return 0
+
+    with connect_kernel(config) as bridge:
+        if action == "seed":
+            committed = seeds.commit(bridge)
+            print(f"committed {len(committed)} seed claims as unverified hypotheses")
+            return 0
+        done = seeds.audit(
+            bridge=bridge,
+            fetcher=http,
+            ledger=Ledger(config, session="audit", campaign="c-1", phase="6b"),
+            wager_id=AUDIT_WAGER,
+        )
+    _print_audit(done)
+    return 0
+
+
+def _print_audit(done: seeds.Audited) -> None:
+    sources = ", ".join(str(source) for source in done.ingested.sources) or "(none)"
+    print(f"seeded {len(done.seeded)}, committed {len(done.ingested.assertions)} from {sources}")
+    print(f"fetching took {done.ingested.cost.seconds:.1f}s\n")
+    for seed, confidence in done.standing:
+        print(f"  {confidence:.2f}  {seed.hypothesis.name}")
+    if done.unverified:
+        print("\nnot corroborated, and not retracted — no source found is not a source that")
+        print("disagrees:")
+        for seed, why in done.unverified:
+            print(f"  {seed.hypothesis.name}\n      {why}")
 
 
 def _charter_command(config: Config, action: str, *, dry_run: bool) -> int:
