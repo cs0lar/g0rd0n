@@ -5,10 +5,13 @@ running totals the Ledger enforces caps against, and the report the cockpit prin
 *derived* by replaying this file. Nothing else is authoritative, so a disagreement between a
 total and the journal is always the total's fault.
 
-From Phase 2 settled costs are also committed to the kernel as `costs wager → cost`. That
-does not make the kernel the ledger's source of truth: this file is written first, at the
-moment money is committed, and the kernel commit is a projection of it — the same
-relationship the vault has to the kernel, one layer down.
+AGENTS.md's vocabulary reserves `costs wager → cost` for settled costs. **Nothing writes that
+edge yet**, so `wager_id` here is a bare string that nothing joins to a kernel entity, and the
+vault's `Wagers/` and `Costs/` folders stay empty. Phase 7 mints the `WagerId`s to point at
+and Phase 11's `why` is the first caller that needs the join. When it lands the edge is a
+*projection* of this file — committed after the money is already durable here, never before —
+because the Ledger cuts across every layer and is owned by none (AGENTS.md, Keep layers
+separate), so it does not depend on the kernel bridge in either direction.
 
 Deletion criterion: this module holds the wager that a crash costs g0rd0n nothing but time.
 Delete it and the running totals live only in memory, which loses the verdict on
