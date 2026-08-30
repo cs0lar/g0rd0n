@@ -30,9 +30,25 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 4 — The Cell Runtime.** `g0rd0n` can price work, remember it with a source attached,
-show it to a human as a navigable argument, run an agent, compose several into a graph, and
-put a question to a person on the same budget. The Question Engine is Phase 5.
+**Phase 5 — The Question Engine.** `g0rd0n` can price work, remember it with a source
+attached, show it to a human as a navigable argument, run an agent, compose several into a
+graph, put a question to a person on the same budget — and now it has a question worth
+spending against. The Evidence Channel is Phase 6.
+
+[`CHARTER.md`](CHARTER.md) is the well-posed version of the task, and it supersedes the seed
+framing in `AGENTS.md` with six criticisms attached. Its central move: *"provably more
+powerful than transformers"* cannot be settled, because two Turing-complete systems do not
+separate on what they compute — but they do separate on what they compute inside a fixed
+energy budget, because a serial step of chain-of-thought costs joules. **The Turing trap
+closes when you charge for the tape.** So the Charter fixes the joules and measures the
+capability, and every term it uses is defined with a worked example in
+[`docs/charter/definitions.md`](docs/charter/definitions.md).
+
+A charter is versioned by the hash of its own substance, so it cannot be edited — an edit is a
+different charter. Replacing one commits a `refines` edge per criticism, and there is no way
+to stop asking the question a given way without writing down why. A human reviewer signs it,
+naming the version they signed, and `g0rd0n charter commit` refuses an unsigned one. That is a
+gate, not a notification.
 
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is
@@ -64,6 +80,9 @@ uv run g0rd0n cost       # what was spent, and on which claim
 
 uv run g0rd0n vault rebuild              # project the kernel into Obsidian
 uv run g0rd0n --dry-run vault rebuild    # ...and what that would overwrite
+
+uv run g0rd0n charter show               # the current question, and what it fixes
+uv run g0rd0n charter commit             # ...into the kernel, once a human has signed it
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,

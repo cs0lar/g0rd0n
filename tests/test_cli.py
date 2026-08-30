@@ -3,9 +3,12 @@
 from pathlib import Path
 
 import pytest
+from test_charter import signed, written
 
 from g0rd0n import __version__, cli
+from g0rd0n.cells.playbook import version_of
 from g0rd0n.config import Config, load
+from g0rd0n.cortex import charter
 from g0rd0n.ledger import Cost, open_session
 
 
@@ -23,6 +26,8 @@ def config_for(tmp_path: Path) -> Config:
         model_api_key_file=tmp_path / "anthropic-key",
         model_prices=(),
         human_queue=tmp_path / "human-queue",
+        charter_path=tmp_path / "CHARTER.md",
+        charter_definitions=tmp_path / "definitions.md",
     )
 
 
@@ -55,6 +60,10 @@ prices = [{{ model = "test-model", input_usd_per_mtok = 1.0, output_usd_per_mtok
 
 [human]
 queue = "{tmp_path / "human-queue"}"
+
+[charter]
+path = "{tmp_path / "CHARTER.md"}"
+definitions = "{tmp_path / "definitions.md"}"
 """,
         encoding="utf-8",
     )
@@ -76,6 +85,18 @@ def _set_up(tmp_path: Path) -> None:
     key = tmp_path / "anthropic-key"
     key.write_text("sk-ant-test\n", encoding="utf-8")
     key.chmod(0o600)
+    _write_charter(tmp_path, sign=True)
+
+
+def _write_charter(tmp_path: Path, *, sign: bool) -> None:
+    """A charter and its definitions, in the two places the config points at."""
+    definitions = tmp_path / "definitions.md"
+    definitions.write_text(
+        f"## Joule\n\nThe SI unit of energy.\n\n{charter.WORKED_EXAMPLE} 20 W for 1 s is 20 J.\n",
+        encoding="utf-8",
+    )
+    text = written(definitions=version_of(definitions.read_bytes()))
+    (tmp_path / "CHARTER.md").write_text(signed(text) if sign else text, encoding="utf-8")
 
 
 def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path) -> None:
@@ -90,6 +111,7 @@ def test_doctor_reports_missing_kernel_and_vault_without_crashing(tmp_path: Path
         "human queue",
         "model api key",
         "model endpoint",
+        "charter",
     ]
     on_this_machine = [check for check in checks if check.name != "model endpoint"]
 
@@ -208,8 +230,67 @@ def test_dry_run_is_accepted_and_changes_nothing_yet(tmp_path: Path) -> None:
 
 def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
     """Phase 0's review checklist, still asked. Each phase widens this line deliberately."""
-    assert set(cli.COMMANDS) == {"version", "doctor", "config", "cost", "vault"}
+    assert set(cli.COMMANDS) == {"version", "doctor", "config", "cost", "vault", "charter"}
     assert cli.VAULT_ACTIONS == ("rebuild",)
+    assert cli.CHARTER_ACTIONS == ("show", "commit")
+
+
+def test_doctor_fails_an_unsigned_charter(tmp_path: Path) -> None:
+    """AGENTS.md §Phase 5 makes the signature a gate, so `doctor` reports a shut gate as shut."""
+    _set_up(tmp_path)
+    (tmp_path / "mcp_server").write_text("#!/bin/sh\n", encoding="utf-8")
+    (tmp_path / "mcp_server").chmod(0o755)
+    _write_charter(tmp_path, sign=False)
+
+    failed = [check for check in cli.doctor(config_for(tmp_path)) if not check.ok]
+
+    assert [check.name for check in failed] == ["charter"]
+    assert "unsigned" in failed[0].detail
+
+
+def test_charter_show_prints_what_the_question_fixes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = write_config(tmp_path)
+    _write_charter(tmp_path, sign=True)
+
+    assert cli.main(["--config", str(config_path), "charter", "show"]) == 0
+
+    out = capsys.readouterr().out
+    assert all(f"## {heading}" in out for heading in charter.ELEMENTS)
+    assert "signed by A Reviewer" in out
+
+
+def test_charter_show_says_so_when_nobody_has_signed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = write_config(tmp_path)
+    _write_charter(tmp_path, sign=False)
+
+    assert cli.main(["--config", str(config_path), "charter", "show"]) == 0
+    assert "UNSIGNED" in capsys.readouterr().out
+
+
+def test_charter_commit_is_priced_by_nobody_and_dry_run_touches_no_kernel(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`--dry-run` answers "would this be accepted?" without a running kernel."""
+    config_path = write_config(tmp_path)
+    _write_charter(tmp_path, sign=True)
+
+    assert cli.main(["--config", str(config_path), "--dry-run", "charter", "commit"]) == 0
+    assert "would commit" in capsys.readouterr().out
+
+
+def test_a_broken_charter_is_an_error_message_not_a_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = write_config(tmp_path)
+    _write_charter(tmp_path, sign=True)
+    (tmp_path / "CHARTER.md").write_text("# Charter\n\n## Question\n\nWhat?\n", encoding="utf-8")
+
+    assert cli.main(["--config", str(config_path), "charter", "show"]) == 1
+    assert "charter:" in capsys.readouterr().err
 
 
 def test_no_command_is_a_usage_error() -> None:

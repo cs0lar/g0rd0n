@@ -11,11 +11,12 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–4 are built; Phase 5 (the Question Engine) is next.** The package is
+**Phases 0–5 are built; Phase 6 (the Evidence Channel) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
-- `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, and nothing else.
+- `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
+  and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -33,8 +34,13 @@ Not Do Yet**.
   converse, check, record, settle), `human.py` (a person as an instrument: question, deadline,
   fallback), `graph.py` (composition, as a dict). Depends on `config`, `ledger`, and `kernel`.
 
+- `cortex/` — `charter.py` (the Question Engine: what a charter must fix, how one supersedes
+  another, and the definitions file it names by hash). Depends on `config`, `kernel`, and
+  `cells.playbook` for `version_of`.
+
 Phase 4 is the first phase that calls a model. Phases 1–3 built the machine that prices
-work, remembers it, and shows it.
+work, remembers it, and shows it. Phase 5 is the first that produced a research artifact:
+`CHARTER.md` and `docs/charter/definitions.md`.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
 `main`. (`feature/gpt` is a parallel implementation of the same AGENTS.md; do not merge
@@ -181,6 +187,30 @@ nothing else.** A person who answers in the wrong shape is a failed run, exactly
 would be — substituting the fallback there would write "nobody answered" over someone who did.
 `Run.fell_back` is a field rather than a note in the transcript because a graph downstream of a
 fallback is running on an assumption. See ADR 0006.
+
+## The Charter
+
+`CHARTER.md` is the well-posed question and supersedes AGENTS.md §The Question. Its move on
+the Turing trap: two Turing-complete systems separate not on what they compute but on what
+they compute inside a fixed energy budget, because a serial step costs joules. So the Charter
+fixes the joules (S4) and measures the capability, rather than the seed's S3 — which is
+unrunnable, because it needs the candidate to already match the control arm.
+
+Four things about `cortex/charter.py` that look arbitrary and are not:
+
+- **A charter's version is the hash of its canonical substance**, exactly as a playbook's is.
+  It cannot be edited; an edit is a different charter. The rendering is canonical rather than
+  the file's bytes so that reordering sections is not a new question.
+- **The signature is the one section outside the hash, and it names the hash.** A document
+  cannot contain the hash of itself-plus-its-signature. A signature naming a different version
+  is a hard error — the text changed after somebody put their name to it.
+- **No supersession without a criticism**, and one `refines` edge per criticism, each carrying
+  its text in provenance. Same discipline as "no Wager without a kill-criterion".
+- **The Charter names `docs/charter/definitions.md` by hash**, inside the substance, so
+  redefining a term supersedes the Charter and costs a fresh signature. Definitions are never
+  committed to the kernel: they fix what words mean, they are not claims.
+
+`commit` refuses an unsigned charter and refuses to commit the same one twice. See ADR 0007.
 
 ## Working rules that differ from ordinary repos
 

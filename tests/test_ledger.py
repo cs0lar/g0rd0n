@@ -43,6 +43,8 @@ def config_for(
         model_api_key_file=tmp_path / "anthropic-key",
         model_prices=(),
         human_queue=tmp_path / "human-queue",
+        charter_path=tmp_path / "CHARTER.md",
+        charter_definitions=tmp_path / "definitions.md",
     )
 
 

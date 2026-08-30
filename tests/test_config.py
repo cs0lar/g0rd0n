@@ -32,6 +32,10 @@ prices = [{ model = "claude-opus-5", input_usd_per_mtok = 15.0, output_usd_per_m
 
 [human]
 queue = "~/human-queue"
+
+[charter]
+path = "CHARTER.md"
+definitions = "docs/charter/definitions.md"
 """
 
 
@@ -57,6 +61,8 @@ def test_a_complete_config_loads_and_expands_paths(tmp_path: Path) -> None:
         model_api_key_file=Path("~/anthropic-key").expanduser(),
         model_prices=(Price("claude-opus-5", 15.0, 75.0),),
         human_queue=Path("~/human-queue").expanduser(),
+        charter_path=Path("CHARTER.md"),
+        charter_definitions=Path("docs/charter/definitions.md"),
     )
     assert not str(config.vault_root).startswith("~")
 

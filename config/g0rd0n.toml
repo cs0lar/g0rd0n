@@ -70,6 +70,16 @@ prices = [
     { model = "claude-haiku-4-5-20251001", input_usd_per_mtok = 1.0, output_usd_per_mtok = 5.0 },
 ]
 
+[charter]
+# The well-posed question, and the definitions that fix what its terms mean (Phase 5).
+#
+# Repository artifacts rather than machine state, so these are resolved relative to the
+# working directory and are meant to stay as they are: the Charter is reviewed in a diff and
+# signed by a human, exactly like a playbook. The charter names its definitions file by
+# version, so editing a definition supersedes the charter rather than amending it.
+path = "CHARTER.md"
+definitions = "docs/charter/definitions.md"
+
 [human]
 # Where a question for a person is dropped, and where their answer is picked up (Phase 4b).
 # A directory rather than a console prompt because g0rd0n runs unattended: the question
