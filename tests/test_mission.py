@@ -32,6 +32,7 @@ class MissionSpecTests(unittest.TestCase):
                 "mission.schema.json",
                 "paradigm-spec.schema.json",
                 "proof-bundle.schema.json",
+                "research-program.schema.json",
                 "research-object.schema.json",
                 "resource.schema.json",
             },
