@@ -9,7 +9,9 @@ reasons. The first is that a dependency is a thing that changes underneath a rec
 supposed to be reproducible. The second is the one that decides it: AGENTS.md §Phase 4 says
 every tool call passes through the network allowlist, and an allowlist enforced somewhere
 above an SDK is decoration — the SDK opens the socket, so it decides where the bytes go.
-Here the host check sits immediately before the request, on the URL that is actually used.
+Here `check_host` sits immediately before the request, on the URL that is actually used. The
+rule itself lives in `instruments.fetch`, because a Cell reaching a paper and a Cell reaching
+Anthropic must go out through one allowlist, not two copies of one.
 
 **No retries.** AGENTS.md §Budget Discipline: rate limits and quotas are costs, not errors to
 retry through, because a retry storm is a spending decision made by nobody. A failed call is
@@ -19,10 +21,11 @@ The API key is read from a file named in the config, never from the environment.
 file is the only channel by which anything enters this process, and a key in an environment
 variable is exactly the ambient state that makes two runs differ invisibly.
 
-Deletion criterion: this module holds the wager that g0rd0n cannot reach a host nobody
-allowed, and cannot spend on a call nobody priced. Delete it and
-`a_host_outside_the_allowlist_is_refused_before_the_request` loses its verdict, and the
-egress point moves inside a library where no test of ours can see it.
+Deletion criterion: this module holds the wager that a model call is priced, bounded, and
+attributable — one provider behind one seam, checked against the allowlist on the URL it
+actually uses. Delete it and `a_host_outside_the_allowlist_is_refused_before_the_request`
+loses its verdict for the model endpoint, and the egress point moves inside a library where
+no test of ours can see it.
 """
 
 import json
@@ -35,6 +38,7 @@ from typing import Any, Protocol
 
 from g0rd0n.cells.cell import Schema, Tool, as_json_schema
 from g0rd0n.config import Config
+from g0rd0n.instruments.fetch import check_host
 
 API_VERSION = "2023-06-01"
 TIMEOUT_SECONDS = 120
@@ -42,10 +46,6 @@ TIMEOUT_SECONDS = 120
 
 class ModelError(Exception):
     """A model call could not be made, or did not come back usable."""
-
-
-class NetworkRefused(ModelError):
-    """The call would have gone to a host the config does not allow. Nothing was sent."""
 
 
 class ModelUnavailable(ModelError):
@@ -178,23 +178,6 @@ class Anthropic:
         if not isinstance(payload, dict):
             raise ModelUnavailable(f"{self.endpoint} answered with a {type(payload).__name__}")
         return payload
-
-
-def check_host(url: str, allowlist: tuple[str, ...]) -> None:
-    """Raise `NetworkRefused` unless `url`'s host is on the allowlist. Called before sending.
-
-    Exact hostname match, with no subdomain wildcards: a rule that allows `*.example.com`
-    allows a host nobody listed, and this is the boundary where "nobody decided that" is
-    most expensive.
-    """
-    host = urllib.parse.urlparse(url).hostname
-    if host is None:
-        raise NetworkRefused(f"{url!r} names no host")
-    if host not in allowlist:
-        allowed = ", ".join(allowlist) or "(nothing)"
-        raise NetworkRefused(
-            f"{host} is not on the network allowlist, which has {allowed}; nothing was sent"
-        )
 
 
 def _as_message(turn: Turn) -> dict[str, Any]:

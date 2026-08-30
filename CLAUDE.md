@@ -11,7 +11,7 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–5 are built; Phase 6 (the Evidence Channel) is next.** The package is
+**Phases 0–6a are built; Phase 6b (search, and the seed audit) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
@@ -37,10 +37,17 @@ Not Do Yet**.
 - `cortex/` — `charter.py` (the Question Engine: what a charter must fix, how one supersedes
   another, and the definitions file it names by hash). Depends on `config`, `kernel`, and
   `cells.playbook` for `version_of`.
+- `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
+  owner of the network allowlist). Returns results and commits nothing. Depends on nothing
+  else in `g0rd0n`.
+- `evidence/` — `citation.py` (resolve: fetch, check, hash, intern), `channel.py` (commit:
+  dedup, corroborate, preserve disagreement, retract). Depends on `instruments`, `kernel`,
+  and `ledger`.
 
-Phase 4 is the first phase that calls a model. Phases 1–3 built the machine that prices
-work, remembers it, and shows it. Phase 5 is the first that produced a research artifact:
-`CHARTER.md` and `docs/charter/definitions.md`.
+Phase 4 is the first phase that calls a model; Phase 6 the first that reaches the open
+network. Phases 1–3 built the machine that prices work, remembers it, and shows it. Phase 5
+is the first that produced a research artifact: `CHARTER.md` and
+`docs/charter/definitions.md`.
 
 Branches: `feature/claude` is this project's root branch and **every PR targets it**, not
 `main`. (`feature/gpt` is a parallel implementation of the same AGENTS.md; do not merge
@@ -105,7 +112,10 @@ Ledger        cuts across all of them and is owned by none
 ```
 
 The Cortex must not know about MCP framing; the Kernel bridge must not know what a Wager is;
-Instruments return results but never commit assertions — a Cell commits.
+Instruments return results but never commit assertions — a Cell commits. `evidence/` sits
+between the two: not an instrument (it commits) and not a Cell (no playbook, no model). A Cell
+decides what a paper says; the Evidence Channel decides what happens to the record when it
+does.
 
 ## The knk dependency
 
@@ -127,7 +137,10 @@ Three things about the bridge that are easy to get wrong:
 - **Entity names carry their kind**: `hypothesis:h-001`, `source:arxiv-2401-00001`. That is
   what makes the vocabulary's edge-direction check free — `refutes` runs result → hypothesis
   and the reverse is rejected. Never intern a bare name. See ADR 0003.
-- **`Bridge.hypothesise` is the only write path**, deliberately. Do not add a `commit`.
+- **`Bridge.hypothesise` is the only way a claim enters**, deliberately. Do not add a
+  `commit`. `retract` (Phase 6) is the one other write path and the last one: knk gives a
+  retraction its own `Retraction` status, so nothing there can make g0rd0n *believe*
+  anything. It demands provenance for the same reason `hypothesise` does.
 - **`knk`'s `find_conflicts` is `Active`-only**, so `conflicts()` returns nothing while
   everything g0rd0n writes is a `Hypothesis`. That is by design, not a bug to fix: rival
   hypotheses are not a conflict, they are the ordinary state of an open question. Phase 10
@@ -211,6 +224,28 @@ Four things about `cortex/charter.py` that look arbitrary and are not:
   committed to the kernel: they fix what words mean, they are not claims.
 
 `commit` refuses an unsigned charter and refuses to commit the same one twice. See ADR 0007.
+
+## The Evidence Channel
+
+**A fetch that succeeds is not a citation that resolves.** arXiv answers a fabricated
+identifier with HTTP 200 and an empty feed, so a `Citation` declares a `must_contain` string
+and `resolve` searches the bytes for it. Verified against the live service. See ADR 0008.
+
+Four more things that look arbitrary and are not:
+
+- **Resolve everything, then commit.** One pass would leave the kernel holding whichever
+  findings came first — permanently, on an append-only store.
+- **A second source corroborates by noisy-OR, capped at `CEILING = 0.95`; the same source
+  twice is skipped.** The cap is load-bearing: noisy-OR assumes independence, papers citing
+  one original are not independent, and no quantity of citation may reach belief. Promotion
+  needs Phase 10's three keys.
+- **Disagreement has no merge step.** Two sources become two hypotheses under one question.
+  The conflict record *is* the rival hypotheses; `rivals()` lists them and nothing reconciles.
+- **A retraction needs a source too.** A claim needs one to enter, so it needs one to leave.
+
+The network allowlist lives in `instruments/fetch.py`, not beside the model provider, and it
+is re-checked **on every redirect hop** — `doi.org` is allowlisted precisely because it
+redirects.
 
 ## Working rules that differ from ordinary repos
 

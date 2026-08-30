@@ -39,12 +39,10 @@ from g0rd0n.cells.model import (
     Model,
     ModelError,
     ModelUnavailable,
-    NetworkRefused,
     Reply,
     ToolCall,
     ToolResult,
     Turn,
-    check_host,
 )
 from g0rd0n.cells.playbook import Playbook, PlaybookError
 from g0rd0n.cells.playbook import load as load_playbook
@@ -64,7 +62,6 @@ __all__ = [
     "Model",
     "ModelError",
     "ModelUnavailable",
-    "NetworkRefused",
     "Node",
     "Playbook",
     "PlaybookError",
@@ -79,7 +76,6 @@ __all__ = [
     "ToolResult",
     "Turn",
     "ask_human",
-    "check_host",
     "check_output",
     "load_playbook",
     "order",

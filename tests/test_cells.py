@@ -25,6 +25,7 @@ from g0rd0n.cells.model import ANSWER, Reply, ToolCall, Turn
 from g0rd0n.cells.playbook import Playbook
 from g0rd0n.cli import Check
 from g0rd0n.config import Config, ConfigError
+from g0rd0n.instruments import fetch
 from g0rd0n.kernel import Bridge, Ref
 from g0rd0n.ledger import Cost, Ledger, Overspend
 from g0rd0n.ledger.ledger import open_session
@@ -320,16 +321,16 @@ def test_a_cell_allowing_a_tool_nobody_provided_is_refused_before_spending(
 
 def test_a_host_outside_the_allowlist_is_refused_before_the_request() -> None:
     """The check sits on the URL that is actually used, immediately before the socket."""
-    with pytest.raises(model_module.NetworkRefused, match="not on the network allowlist"):
-        model_module.check_host("https://evil.example.com/v1/messages", ("api.anthropic.com",))
+    with pytest.raises(fetch.NetworkRefused, match="not on the network allowlist"):
+        fetch.check_host("https://evil.example.com/v1/messages", ("api.anthropic.com",))
 
-    model_module.check_host("https://api.anthropic.com/v1/messages", ("api.anthropic.com",))
+    fetch.check_host("https://api.anthropic.com/v1/messages", ("api.anthropic.com",))
 
 
 def test_the_allowlist_does_not_match_subdomains() -> None:
     """A rule that allows `*.example.com` allows a host nobody listed."""
-    with pytest.raises(model_module.NetworkRefused):
-        model_module.check_host("https://evil.api.anthropic.com/x", ("api.anthropic.com",))
+    with pytest.raises(fetch.NetworkRefused):
+        fetch.check_host("https://evil.api.anthropic.com/x", ("api.anthropic.com",))
 
 
 def test_the_provider_refuses_to_send_before_it_opens_a_socket(tmp_path: Path) -> None:
@@ -340,7 +341,7 @@ def test_the_provider_refuses_to_send_before_it_opens_a_socket(tmp_path: Path) -
         allowlist=("api.anthropic.com",),
     )
 
-    with pytest.raises(model_module.NetworkRefused):
+    with pytest.raises(fetch.NetworkRefused):
         provider.reply(model="m", system="s", turns=(), tools=(), max_tokens=16)
 
     assert provider._opened == []

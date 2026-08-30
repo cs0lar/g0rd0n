@@ -30,10 +30,18 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 5 — The Question Engine.** `g0rd0n` can price work, remember it with a source
+**Phase 6a — The Evidence Channel.** `g0rd0n` can price work, remember it with a source
 attached, show it to a human as a navigable argument, run an agent, compose several into a
-graph, put a question to a person on the same budget — and now it has a question worth
-spending against. The Evidence Channel is Phase 6.
+graph, put a question to a person on the same budget, and now go and get evidence — refusing
+any citation it cannot retrieve. Search and the seed audit are Phase 6b.
+
+**A fetch that succeeds is not a citation that resolves.** arXiv answers a fabricated
+identifier with HTTP 200 and an empty feed, so a citation declares what its own record must
+contain and the bytes are searched for it; anything else fails the whole ingestion run rather
+than becoming a weak claim. A second source raises confidence and both sources stay; the same
+source twice raises nothing. Two sources that disagree stay two hypotheses, because averaging
+them destroys the most interesting thing in the record. And a claim can be retracted — with a
+source of its own, because a claim needs one to enter and so needs one to leave.
 
 [`CHARTER.md`](CHARTER.md) is the well-posed version of the task, and it supersedes the seed
 framing in `AGENTS.md` with six criticisms attached. Its central move: *"provably more
