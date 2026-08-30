@@ -1,0 +1,41 @@
+{
+  "id": "synthetic-discovery-v1",
+  "question": "Which deterministic mechanism generated the held-out sequence?",
+  "hypotheses": ["affine-rule", "lookup-table"],
+  "budget": {
+    "currency_micros": 20,
+    "tokens": 100,
+    "compute_ms": 1000,
+    "energy_joules": 10,
+    "human_minutes": 5
+  },
+  "escalation": {
+    "max_total_failures": 3,
+    "escalate_on_budget_denial": true,
+    "escalate_on_review_rejection": true
+  },
+  "experiments": [
+    {
+      "id": "extrapolation-test",
+      "description": "Test values outside the memorized training interval.",
+      "hypothesis_ids": ["affine-rule", "lookup-table"],
+      "estimated_cost": {"currency_micros": 2, "tokens": 5, "compute_ms": 20, "energy_joules": 0.2, "human_minutes": 0},
+      "maximum_cost": {"currency_micros": 4, "tokens": 10, "compute_ms": 50, "energy_joules": 0.5, "human_minutes": 0},
+      "expected_value": "Discriminate rule induction from memorization.",
+      "stop_condition": "A deterministic held-out prediction is recorded.",
+      "max_attempts": 2,
+      "requires_human_review": false
+    },
+    {
+      "id": "claim-review",
+      "description": "Human reviews whether the evidence supports changing the surviving claim.",
+      "hypothesis_ids": ["affine-rule"],
+      "estimated_cost": {"currency_micros": 1, "tokens": 2, "compute_ms": 5, "energy_joules": 0.05, "human_minutes": 1},
+      "maximum_cost": {"currency_micros": 2, "tokens": 5, "compute_ms": 10, "energy_joules": 0.1, "human_minutes": 2},
+      "expected_value": "Prevent automatic promotion without human interpretation.",
+      "stop_condition": "A reviewed claim update is recorded.",
+      "max_attempts": 1,
+      "requires_human_review": true
+    }
+  ]
+}

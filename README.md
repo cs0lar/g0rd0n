@@ -76,6 +76,10 @@ Phase 13 adds formal claims and verifier adapters under `g0rd0n/proofs/`, plus
 content-addressed proof artifacts, counterexample search, reusable complexity
 bounds, and an independently checkable toy membership-query separation theorem.
 
+Phase 14 adds bounded, resumable research programs under `g0rd0n/programs/`.
+Hash-chained session checkpoints preserve queues, review gates, retries, budget
+decisions, evidence, failures, and complete end-of-session resource reports.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,
