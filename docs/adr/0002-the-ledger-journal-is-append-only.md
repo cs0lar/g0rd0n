@@ -35,12 +35,30 @@ crash between the update and the write is impossible, because that order never h
 
 ### Relationship to the kernel
 
-From Phase 2, settled costs are also committed to the kernel as `costs wager → cost`. This
-does **not** make the kernel the ledger's source of truth. The journal is written at the
-moment money is committed, and the kernel commit is a projection of it — the same
-relationship the vault has to the kernel, one layer down. The Ledger cuts across every layer
-and is owned by none (AGENTS.md, Keep layers separate), so it cannot depend on the kernel
-bridge without inverting that.
+The Ledger cuts across every layer and is owned by none (AGENTS.md, Keep layers separate), so
+it does not depend on the kernel bridge. `ledger/` imports `config` and nothing else in
+`g0rd0n`, and money is durable here before it is anywhere else.
+
+AGENTS.md's vocabulary reserves `costs wager → cost` for settled costs. **It is not committed
+yet, and this ADR used to claim it was.**
+
+> *Corrected 2026-08-30.* The original text read: "From Phase 2, settled costs are also
+> committed to the kernel as `costs wager → cost`." No such edge has ever been written. The
+> only `hypothesise` call sites outside the bridge are `runtime`'s `plays` edge and
+> `charter`'s `asks` and `refines` edges.
+
+Two consequences are live today and should be read as known gaps rather than design:
+
+- `wager_id` is a bare string in a JSON line, and nothing checks that it names a wager the
+  kernel has heard of. The chain AGENTS.md §4 requires — every dollar back to a question —
+  crosses a store boundary with no join, so `g0rd0n why` cannot yet walk it.
+- The vault's `Wagers/` and `Costs/` folders are permanently empty, so "the graph view *is*
+  the argument structure" holds for the argument and not for its price.
+
+Phase 7 mints the `WagerId`s there would be to point at, and Phase 11's `why` is the first
+caller that needs the join. When the edge is built it is a **projection** of this journal,
+committed after the money is already durable here — the same relationship the vault has to
+the kernel, one layer down, and never the reverse.
 
 A disagreement between a total and the journal is always the total's fault.
 
