@@ -9,6 +9,9 @@ description = "A resource-bounded scientific search for alternative cognitive ar
 requires-python = ">=3.12"
 dependencies = []
 
+[dependency-groups]
+dev = []
+
 [tool.setuptools.packages.find]
 include = ["g0rd0n*"]
 

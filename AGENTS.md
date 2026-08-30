@@ -1153,6 +1153,7 @@ Capability research and operational autonomy are distinct concerns.
 Until evidence says otherwise:
 
 - prefer Python for orchestration and experiments;
+- use uv for Python versions, dependency locking, and reproducible commands;
 - use typed schemas;
 - use subprocess/tool boundaries rather than deep framework coupling;
 - keep core logic deterministic where possible;

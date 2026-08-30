@@ -10,7 +10,7 @@ verified.
 Run the repository's toy theorem independently:
 
 ```bash
-python -m g0rd0n.proofs verify proofs/toy-direct-address-membership.json
+uv run python -m g0rd0n.proofs verify proofs/toy-direct-address-membership.json
 ```
 
 The theorem concerns static membership for `n` stored keys in a universe of
