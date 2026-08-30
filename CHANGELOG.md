@@ -5,6 +5,36 @@ All notable changes to this project are recorded here. Phases refer to the roadm
 
 ## [Unreleased]
 
+### Added — Phase 6a: The Evidence Channel (resolution and ingestion)
+
+- `instruments/` — the layer that returns results and never commits. `fetch.py` is the only
+  socket to anywhere but the model endpoint, and it now owns the **network allowlist**, moved
+  down from `cells/model.py` so a Cell reaching a paper and a Cell reaching Anthropic go out
+  through one rule rather than two copies of one.
+- The allowlist is re-checked **on every redirect hop**. `urlopen` follows redirects silently,
+  and `doi.org` is on the shipped allowlist precisely because it redirects.
+- `evidence/citation.py` — resolve, fetch, hash, intern. **A fetch that succeeds is not a
+  citation that resolves:** arXiv answers a fabricated identifier with HTTP 200 and an empty
+  feed, so a `Citation` declares a `must_contain` string and the retrieved bytes are searched
+  for it. Verified against the live service.
+- `evidence/channel.py` — ingestion. Every citation resolves before anything is committed, so
+  an unresolvable one fails the run without leaving half of it in an append-only store.
+- Corroboration by noisy-OR, capped at 0.95: a second distinct source raises confidence and
+  both sources are kept; the same source cited twice raises nothing. No quantity of citation
+  reaches belief — promotion still needs Phase 10's three keys.
+- Disagreement is preserved with no merge step. Two sources become two hypotheses under one
+  question, each with its own confidence and provenance; `rivals()` lists them.
+- `Bridge.retract` — the second write path and the last one. knk gives a retraction its own
+  `Retraction` status and marks the original `Retracted`, so nothing here can make g0rd0n
+  believe anything. It requires provenance: a claim needs a source to enter, so it needs one
+  to leave.
+- The bridge's write surface is now **pinned structurally** in `tests/test_razor.py`: a table
+  naming each method and the knk tools it may reach, checked by an AST pass. Going from one
+  write path to two turned a bright line into a judgement call, and this puts the argument for
+  a third in a diff rather than in a docstring. A companion test forbids any module above
+  `kernel/` from touching the MCP client directly.
+- See `docs/adr/0008-a-fetch-that-succeeds-is-not-a-citation-that-resolves.md`.
+
 ### Added — Phase 5: The Question Engine
 
 - `CHARTER.md` — the well-posed version of the task, superseding the seed framing in

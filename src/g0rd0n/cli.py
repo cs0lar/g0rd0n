@@ -23,10 +23,10 @@ from pathlib import Path
 from typing import NamedTuple
 
 from g0rd0n import __version__, vault
-from g0rd0n.cells import model
 from g0rd0n.config import Config, ConfigError, load
 from g0rd0n.cortex import charter as charter_document
 from g0rd0n.cortex.charter import CharterError
+from g0rd0n.instruments import fetch
 from g0rd0n.kernel import KernelError
 from g0rd0n.kernel import connect as connect_kernel
 from g0rd0n.ledger import BudgetExhausted, JournalError, LedgerError
@@ -286,8 +286,8 @@ def _api_key(config: Config) -> Check:
 def _endpoint(config: Config) -> Check:
     """A model endpoint off the allowlist is a run that will refuse at the first call."""
     try:
-        model.check_host(config.model_endpoint, config.network_allowlist)
-    except model.NetworkRefused as exc:
+        fetch.check_host(config.model_endpoint, config.network_allowlist)
+    except fetch.NetworkRefused as exc:
         return Check("model endpoint", False, str(exc))
     return Check("model endpoint", True, config.model_endpoint)
 

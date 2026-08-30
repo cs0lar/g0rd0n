@@ -7,10 +7,16 @@ that will eventually be enforced in one:
   method that extracted it. There is no exemption for well-known facts, and no default. The
   kernel's own `commit_hypothesis` demands a source too, but it will accept an empty method
   string; the bridge will not.
-- **Machine-suggested claims land as `Hypothesis`.** `commit_hypothesis` is the only write
-  path this module has. There is no way to commit an `Active` assertion through it, because
+- **Machine-suggested claims land as `Hypothesis`.** `commit_hypothesis` is the only way a
+  claim enters. There is no way to commit an `Active` assertion through this module, because
   promotion needs three keys and Phase 10's referee holds them. A `commit` method here would
   be a hole with a comment next to it.
+
+`retract` is the one other write path, added in Phase 6 and required by AGENTS.md §2 — a
+hypothesis is superseded or retracted, never edited. It is not an exception to the rule above:
+knk gives a retraction its own `Retraction` status and marks the original `Retracted`, so
+nothing here can still make g0rd0n *believe* anything. It demands provenance for the same
+reason `hypothesise` does.
 
 `find_conflicts` is offered and never acted on. Conflicting claims are surfaced to a human or
 to the referee; averaging them, preferring the newer one, or dropping the older one are all
@@ -127,6 +133,53 @@ class Bridge:
             )
         )
         return assertion_id
+
+    def retract(self, assertion_id: AssertionId, provenance: Provenance) -> AssertionId:
+        """Withdraw a claim, saying who says so. Returns the retraction's own assertion id.
+
+        The second write path, and the only other one there will be. `hypothesise` is the only
+        way a *claim* enters; this is the only way one leaves, and it is not a claim — knk
+        gives it status `Retraction`, flips the original to `Retracted`, and drops it out of
+        `hypotheses_for` while `assertions_for` keeps both. Nothing is edited and nothing is
+        deleted, so AGENTS.md §2 holds: hypotheses are superseded or retracted, never edited.
+
+        **Provenance is required here too.** A claim needs a source to enter, so it needs one
+        to leave: "we stopped believing this" with nobody's name on it is how a record quietly
+        loses the inconvenient half of its history. knk's `commit_retraction` does not take a
+        source, so the provenance is recorded as a second call, and this method is the only
+        place that pairing exists.
+
+        The retraction repeats the original's triple because knk asks for it; it carries
+        confidence 0.0, which is what a withdrawal is worth.
+        """
+        _check_provenance(provenance)
+        original = self.get(assertion_id)
+        at = now()
+        retraction = int(
+            self._client.call(
+                "commit_retraction",
+                {
+                    "subject": original.subject,
+                    "predicate": original.predicate,
+                    "object": original.object,
+                    "valid_from": original.valid_from,
+                    "valid_to": original.valid_to,
+                    "observed_at": at,
+                    "confidence": 0.0,
+                    "retracts_id": assertion_id,
+                },
+            )
+        )
+        self._client.call(
+            "record_provenance",
+            {
+                "assertion_id": retraction,
+                "source": self.intern(provenance.source),
+                "recorded_at": at,
+                "method": provenance.method,
+            },
+        )
+        return retraction
 
     def intern(self, ref: Ref) -> EntityId:
         """Get the kernel's id for an entity, creating it if this is the first mention."""
