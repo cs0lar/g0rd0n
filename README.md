@@ -72,6 +72,10 @@ It learns progress per total cost by workload family, activates or reuses useful
 resources, retires consistently poor ones, and compares itself with fixed
 scheduling on held-out paired workloads.
 
+Phase 13 adds formal claims and verifier adapters under `g0rd0n/proofs/`, plus
+content-addressed proof artifacts, counterexample search, reusable complexity
+bounds, and an independently checkable toy membership-query separation theorem.
+
 The contract intentionally makes failure possible. A candidate is not promoted
 unless it is executable, evaluated across heterogeneous task families, strictly
 better than named baselines under a declared resource bound, energy-accounted,

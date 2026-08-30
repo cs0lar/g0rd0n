@@ -1,0 +1,41 @@
+{
+  "claim": {
+    "id": "theorem.toy-direct-address-membership.v1",
+    "task_family": "static set membership",
+    "architecture_x": "direct-address U-bit membership vector",
+    "architecture_y": "deterministic ordered comparison decision tree over n stored keys",
+    "assumptions": [
+      "The universe is {0,...,U-1}, the set contains n distinct keys with U>n, and X uses a U-bit vector.",
+      "A word-RAM computes the query address and reads one indexed bit in constant time.",
+      "Y is a deterministic ordered comparison decision tree over n distinct stored keys.",
+      "The measured resource is worst-case sequential key comparisons or indexed bit reads per query."
+    ],
+    "x_bound": {
+      "kind": "upper",
+      "resource": "worst-case sequential memory probes/comparisons per membership query",
+      "template": "constant",
+      "constant": 1
+    },
+    "y_bound": {
+      "kind": "lower",
+      "resource": "worst-case sequential memory probes/comparisons per membership query",
+      "template": "ceil_log2_n_plus_1"
+    },
+    "domain_min_n": 4,
+    "obligations": [
+      {"id": "x-correct", "statement": "Reading bit q returns membership of q by representation definition."},
+      {"id": "x-upper", "statement": "X performs exactly one indexed bit read per query."},
+      {"id": "y-lower", "statement": "A height-h comparison tree stores at most 2^h-1 equality keys."},
+      {"id": "strict-separation", "statement": "For every n >= 4, 1 < ceil(log2(n+1))."}
+    ],
+    "verifier": "builtin:toy-membership-separation-v1"
+  },
+  "certificate": {
+    "direct_address_rule": "return bit_vector[query]",
+    "capacity_base": "C(0)=0",
+    "capacity_recurrence": "C(h)=1+2*C(h-1)",
+    "capacity_closed_form": "C(h)=2^h-1",
+    "induction_rule": "natural-number induction",
+    "normalized_step": "1+2*(2^h-1)=2^(h+1)-1"
+  }
+}
