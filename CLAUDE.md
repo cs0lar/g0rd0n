@@ -11,12 +11,11 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–7a are built; Phase 7b (the portfolio, the allocator, and the stopping rules) is
-next.** The package is `src/g0rd0n/`:
+**Phases 0–7 are built; Phase 8 (the Bench) is next.** The package is `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
-  `evidence search|seed|audit`, and nothing else.
+  `evidence search|seed|audit`, `portfolio seed|status|next`, and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -36,8 +35,10 @@ next.** The package is `src/g0rd0n/`:
 
 - `cortex/` — `charter.py` (the Question Engine: what a charter must fix, how one supersedes
   another, and the definitions file it names by hash), `wager.py` (the Wager, the
-  falsifiability gate, and pre-registration). Depends on `config`, `kernel`, `ledger`,
-  `evidence.channel` for `rivals`, and `cells.playbook` for `version_of`.
+  falsifiability gate, and pre-registration), `portfolio.py` (the nine candidate families,
+  their priors, and what would kill each), `allocator.py` (cheapest falsifier first, and the
+  stopping rules). Depends on `config`, `kernel`, `ledger`, `evidence.channel` for `rivals`,
+  `combine` and `sources_for`, and `cells.playbook` for `version_of`.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
   prose). Returns results and commits nothing. Depends on nothing else in `g0rd0n`.
@@ -291,6 +292,31 @@ without a stated way to lose" stops being prose. Five things that look arbitrary
 the wager's word. Known gap, written down in ADR 0010: nothing yet proves a wager was
 registered *before the experiment physically ran* — Phase 8's Bench closes that by taking the
 `Registration` as an argument.
+
+## The portfolio and the allocator
+
+`portfolio.py` is the field (nine families from AGENTS.md, priors and kill criteria);
+`allocator.py` decides what to spend on next. Five things that catch people out:
+
+- **`read` is the only impure part.** One pass over `changes_since(0)` builds a `Board`;
+  `rank`, `score`, `allocate` and `criticisms` are pure functions of it. Keep it that way —
+  most of `test_allocator.py` runs without `knk` because of it. And `read` scans the *whole
+  kernel* rather than the wagers in hand, because `untested` has to mean "nothing tried", not
+  "nothing on this list tried".
+- **`P(flip)` is zero for a challenger that cannot overtake**, and that zero is the defence
+  against wager inflation (ADR 0001). Cheapness is a divisor, never a reason.
+- **A wager on the leader flips by *losing*** — `P(flip) = 1 - prior`. The best wager is not
+  the one likeliest to succeed. Today that makes the allocator's first pick "try to kill the
+  control arm", which is correct and looks wrong.
+- **`HUMAN_USD_PER_HOUR` is a ranking weight, not a price.** It never enters a `Cost`, the
+  journal, or a reservation. A wager priced in neither dollars nor attention is *refused*,
+  not guessed at — same rule as `Config.price_of`.
+- **`Exhausted` deliberately has no wager to run**, and carries `criticisms` a superseding
+  Charter can use verbatim. Exhaustion is "nothing we could run could change what we
+  believe", never "we ran out of money" — `BudgetExhausted` is a different thing entirely.
+
+The per-Wager price cap is not built here and must not be: it already *is* the pre-registered
+price, enforced by `Overspend`. See ADR 0012.
 
 ## Working rules that differ from ordinary repos
 
