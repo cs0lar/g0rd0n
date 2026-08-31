@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.local/schemas/method-protocol.schema.json",
+  "title": "MethodProtocol",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "abstract",
+    "motivation",
+    "related_work",
+    "mechanism",
+    "data_construction",
+    "configuration",
+    "assumptions",
+    "expected_result",
+    "falsifiers",
+    "compliance_declarations"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "abstract": {"type": "string", "minLength": 1},
+    "motivation": {"type": "string", "minLength": 1},
+    "related_work": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "mechanism": {"type": "string", "minLength": 1},
+    "data_construction": {"type": "string", "minLength": 1},
+    "configuration": {"type": "object", "minProperties": 1},
+    "assumptions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "expected_result": {"type": "string", "minLength": 1},
+    "falsifiers": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "compliance_declarations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}
