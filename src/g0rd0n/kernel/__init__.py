@@ -12,9 +12,10 @@ This package does not know what a Wager is (AGENTS.md, Keep layers separate). It
 provenance, and assertions, and it depends on `config` and nothing else in g0rd0n.
 
 Deletion criterion: this module holds the wager that the kernel is one import away and the
-MCP framing is invisible above it. Delete it and callers reach into `g0rd0n.kernel.bridge`
-past the boundary, coupling the Cortex to JSON-RPC — the exact inversion AGENTS.md's layering
-rule exists to prevent.
+MCP framing is invisible above it. Delete it and
+`no_module_reaches_past_the_bridge_to_the_kernel_client` loses its verdict: callers reach
+into `g0rd0n.kernel.bridge` past the boundary, coupling the Cortex to JSON-RPC — the exact
+inversion AGENTS.md's layering rule exists to prevent.
 """
 
 from g0rd0n.kernel.bridge import (

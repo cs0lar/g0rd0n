@@ -11,8 +11,8 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–6 are built; Phase 7 (the Wager and the Allocator) is next.** The package is
-`src/g0rd0n/`:
+**Phases 0–7a are built; Phase 7b (the portfolio, the allocator, and the stopping rules) is
+next.** The package is `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
@@ -35,8 +35,9 @@ Not Do Yet**.
   fallback), `graph.py` (composition, as a dict). Depends on `config`, `ledger`, and `kernel`.
 
 - `cortex/` — `charter.py` (the Question Engine: what a charter must fix, how one supersedes
-  another, and the definitions file it names by hash). Depends on `config`, `kernel`, and
-  `cells.playbook` for `version_of`.
+  another, and the definitions file it names by hash), `wager.py` (the Wager, the
+  falsifiability gate, and pre-registration). Depends on `config`, `kernel`, `ledger`,
+  `evidence.channel` for `rivals`, and `cells.playbook` for `version_of`.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
   prose). Returns results and commits nothing. Depends on nothing else in `g0rd0n`.
@@ -261,14 +262,47 @@ The seed audit's result is worth knowing before touching the Charter: **the ~20 
 is the least supported claim in the kernel** (0.30, sourced only to AGENTS.md), because its
 primary literature is journal work on hosts nobody allowlisted.
 
+## The Wager
+
+`cortex/wager.py` is where "no spend without a Wager, no Wager without a Question, no Wager
+without a stated way to lose" stops being prose. Five things that look arbitrary and are not:
+
+- **A wager's id is `f"{label}-{version}"`, and the version is the hash of its substance** —
+  every field it pre-registers. So **there is no edit that keeps the id.** Soften the kill
+  criterion after seeing the result and you have a different wager the kernel never heard of.
+  That is what "post-hoc criteria are structurally impossible" means here. The label is
+  *inside* the hash because it is what `cost --by wager` prints.
+- **A wager mints two entities under one name**: `wager:<id>` carries the price, and
+  `experiment:<id>` carries `tests` and later `measures`. The closed vocabulary has no
+  predicate joining them — `wager` appears only as the subject of `costs` — so the shared
+  name is the join. Do not add a thirteenth predicate for it. See ADR 0010.
+- **The estimate goes into the kernel; the actual does not.** `wager costs cost:<id>-price`
+  is a commitment you can be held to. What it really cost is the journal's, and a second copy
+  is a second thing to disagree with (ADR 0002).
+- **`cortex.wager.reserve` takes a `Registration` and no estimate.** Only `register` makes a
+  `Registration`, so that is the one place a bare `wager_id` string becomes a claim somebody
+  committed to first. Taking no estimate is half the point: re-pricing a wager at the moment
+  you run it is the post-hoc move wearing a different hat.
+- **`inconclusive` and `abandoned` commit `measures` and nothing else.** `ARGUES` maps them
+  to `None` explicitly, so turning a null result into weak corroboration is a visible change
+  to a table. `abandoned` needs a reason; `BudgetExhausted` is not a verdict and never will be.
+
+"No Wager without a parent Question" is checked against the kernel (`rivals`), not taken on
+the wager's word. Known gap, written down in ADR 0010: nothing yet proves a wager was
+registered *before the experiment physically ran* — Phase 8's Bench closes that by taking the
+`Registration` as an argument.
+
 ## Working rules that differ from ordinary repos
 
 - **One phase per PR, in order.** Do not jump ahead or fold the next phase's work in "while
   we're here". Splitting into `4a`/`4b` is allowed and should be said out loud in the PR.
-- **Every module's docstring carries a `Deletion criterion:` line** naming what stops being
-  checkable if the module is deleted. Enforced by `tests/test_razor.py`. Until Phase 7 gives
-  us `WagerId`s to point at, it is prose; see `docs/adr/0001-the-wager-is-the-primitive.md`
-  for why that compromise is dated and temporary.
+- **Every module's docstring carries a `Deletion criterion:` line** that **names at least one
+  test that exists**, in backticks, with or without its `test_` prefix. Enforced by
+  `tests/test_razor.py`. Renaming a test means grepping docstrings for its name — that is the
+  cost of the identifier resolving at all. It resolves against the test suite rather than
+  against a `WagerId` in the kernel, which is what ADR 0001 originally promised; ADR 0011
+  records why, the short version being that a kernel lookup would make the Razor skip on any
+  machine without a built `knk`.
 - **Append-only epistemics.** Hypotheses are superseded or retracted, never edited. Refuted
   candidates stay in the record with their refutation attached.
 - **Design decisions go in `docs/adr/`**, answering: what is the invariant, why this design,

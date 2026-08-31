@@ -12,10 +12,12 @@ the questions these claims answer. It is not `cells`: there is no playbook and n
 A Cell decides what a paper says; this decides what happens to the record when it does.
 
 Deletion criterion: this package holds the wager that every belief in g0rd0n traces to
-something somebody can go and retrieve. Delete it and all four Phase 6 minimum tests lose
-their verdicts at once — a fabricated reference stops being a stopped run, two sources
-saying different things stop being two hypotheses, and the seed numbers in AGENTS.md can
-never be retracted, only quietly outlived.
+something somebody can go and retrieve. Delete it and `unresolvable_citation_fails_the_
+ingestion_run`, `duplicate_claim_from_a_second_source_raises_confidence_and_records_both_
+sources`, `contradictory_claims_produce_a_conflict_record` and `seed_claims_are_retracted_
+when_the_source_disagrees` lose their verdicts at once — a fabricated reference stops being
+a stopped run, two sources saying different things stop being two hypotheses, and the seed
+numbers in AGENTS.md can never be retracted, only quietly outlived.
 """
 
 from g0rd0n.evidence.channel import (
