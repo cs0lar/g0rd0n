@@ -11,13 +11,21 @@ parse source and need nothing.
 """
 
 import ast
+import re
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1] / "src" / "g0rd0n"
+SUITE = Path(__file__).resolve().parent
 
 BRIDGE = PACKAGE / "kernel" / "bridge.py"
 
 MARKER = "Deletion criterion:"
+
+#: A backticked identifier in a deletion criterion. Spaces are allowed inside because a long
+#: test name gets wrapped across two lines of a docstring, and folding the line puts a space
+#: where the wrap was; `_named` strips them back out. Criteria name tests without the `test_`
+#: prefix, which is how they read as sentences: "`x` loses its verdict".
+IDENTIFIER = re.compile(r"`([a-z0-9_][a-z0-9_ ]*)`")
 
 #: Names that mean "this module went looking for its configuration instead of being handed
 #: it". `os.path.expanduser` is not on this list on purpose: expanding `~` is path
@@ -69,18 +77,43 @@ def test_the_package_has_modules_to_check() -> None:
 def test_every_module_declares_a_deletion_criterion() -> None:
     """AGENTS.md, The Imperative (2): no settled Wager would be lost, no module.
 
-    Until Phase 7 gives us `WagerId`s to point at, the criterion is prose naming the
-    invariant the module protects. Phase 7 tightens this to a resolvable identifier; see
-    docs/adr/0001-the-wager-is-the-primitive.md.
+    Tightened in Phase 7 from a length floor to a **resolvable identifier**: the criterion
+    must name at least one test that exists in this suite. ADR 0001 promised that tightening
+    and expected the identifier to be a `WagerId` looked up in the kernel; ADR 0011 records
+    why it resolves against the test suite instead, and why the length floor was the wrong
+    check to keep — "every Phase 4 minimum test" clears forty characters and points at
+    nothing.
     """
+    known = named_tests()
     for module in modules():
         where = module.relative_to(PACKAGE.parents[1])
         docstring = ast.get_docstring(ast.parse(module.read_text(encoding="utf-8")))
         assert docstring, f"{where} has no module docstring"
         assert MARKER in docstring, f"{where} does not declare a '{MARKER}'"
         _, _, criterion = docstring.partition(MARKER)
-        words = " ".join(criterion.split())
-        assert len(words) >= 40, f"{where} declares a deletion criterion that says nothing"
+        named = _named(criterion)
+        assert named & known, (
+            f"{where} declares a deletion criterion naming no test that exists. Name at least "
+            f"one thing that loses its verdict without this module, in backticks: {sorted(named)}"
+        )
+
+
+def named_tests() -> set[str]:
+    """Every test in this suite, by name, with and without its `test_` prefix."""
+    found: set[str] = set()
+    for path in sorted(SUITE.glob("test_*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name.startswith(
+                "test_"
+            ):
+                found |= {node.name, node.name.removeprefix("test_")}
+    return found
+
+
+def _named(criterion: str) -> set[str]:
+    """The backticked identifiers a deletion criterion names, unwrapped."""
+    folded = " ".join(criterion.split())
+    return {match.replace(" ", "") for match in IDENTIFIER.findall(folded)}
 
 
 def test_config_is_injected_never_read_from_env_inside_components() -> None:

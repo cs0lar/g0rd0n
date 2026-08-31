@@ -30,11 +30,18 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 6 — The Evidence Channel.** `g0rd0n` can price work, remember it with a source
-attached, show it to a human as a navigable argument, run an agent, compose several into a
-graph, put a question to a person on the same budget, and now go and get evidence — searching
-primary literature, refusing any citation it cannot retrieve, and auditing its own founding
-document against what it finds. The Wager and the Allocator are Phase 7.
+**Phase 7a — The Wager and pre-registration.** `g0rd0n` can price work, remember it with a
+source attached, show it to a human as a navigable argument, run an agent, compose several
+into a graph, put a question to a person on the same budget, go and get evidence — and now
+open a Wager on what it finds. The allocator that ranks them is Phase 7b.
+
+**A wager is the hash of what it pre-registered.** Claim, test, price and kill-criterion go
+into the kernel *before* anything runs, and the wager's identity is a hash of exactly those
+things — so softening a kill criterion after seeing the result does not amend a wager, it
+produces a different one the kernel has never heard of. Post-hoc criteria are not forbidden,
+they are unrepresentable. Money moves through one function that takes proof of registration
+and takes no estimate, because the price you are held to is the one you named first. And
+`Verdict` is closed at four: running out of money is not one of them, and never will be.
 
 The first thing it audited was itself. Of the five unsourced numbers in `AGENTS.md`, two are
 corroborated by primary sources and three could not be verified at all — including the ~20 W

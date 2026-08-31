@@ -5,9 +5,11 @@ every claim the programme makes can be traced to what it cost, who made it, and 
 have refuted it.
 
 Deletion criterion: this package is the wager that the research question is best attacked by
-building the bookkeeping first and the research second. Delete it and there is no ledger, no
-provenance, and no way to tell an answer from a story about one — which is the entire claim
-the project exists to test.
+building the bookkeeping first and the research second. Delete it and
+`no_priced_call_without_a_reservation`, `unsourced_claim_is_rejected_at_the_bridge` and
+`wager_without_a_kill_criterion_is_rejected` all lose their verdicts together — there is no
+ledger, no provenance, and no way to tell an answer from a story about one, which is the
+entire claim the project exists to test.
 """
 
 __version__ = "0.0.0"

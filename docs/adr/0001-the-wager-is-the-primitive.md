@@ -98,6 +98,16 @@ which point the length floor is replaced by a lookup against the kernel. Recorde
 that the weaker Phase 0 form is a known, dated compromise rather than the standard quietly
 having been lowered.
 
+> **Amended 2026-08-31, Phase 7a.** The tightening happened; the identifier is not a
+> `WagerId`. The criterion must now name at least one test that **exists in the suite**, and
+> the length floor is gone. Resolving against the kernel instead would have required a wager
+> per module — unfalsifiable claims, permanently open in the allocator's portfolio — and
+> would have made the Razor skip on any machine without a built `knk`, which is the one
+> property `tests/test_razor.py` exists to have. See
+> [ADR 0011](0011-a-deletion-criterion-resolves-against-the-test-suite.md). Seven modules
+> were found to be naming no test at all under the old floor, all of them clearing forty
+> characters.
+
 ## How it is tested
 
 Phase 0 can only test the parts of the invariant that exist yet:

@@ -10,9 +10,11 @@ session total is the sum of its parts and that sum must not depend on the order 
 in; immutable because a cost that can be edited after the fact is not evidence.
 
 Deletion criterion: this module holds the wager that every dimension of what a claim cost is
-recorded, not just the one that is easy to bill. Delete it and `usd` becomes the only
-currency, which loses the verdict on any comparison involving wall-clock, GPU time, or human
-attention — including the human-cell accounting that Phase 4 depends on.
+recorded, not just the one that is easy to bill. Delete it and
+`overspend_is_caught_in_any_dimension_not_just_dollars` and
+`costs_attributed_to_a_wager_sum_to_the_session_total` lose their verdicts: `usd` becomes
+the only currency, and any comparison involving wall-clock, GPU time, or human attention
+goes unchecked — including the human-cell accounting that Phase 4 depends on.
 """
 
 from collections.abc import Mapping

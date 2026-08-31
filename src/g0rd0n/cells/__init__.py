@@ -15,7 +15,10 @@ A person and a model return the same `Run` and reserve from the same ledger, bec
 AGENTS.md §Phase 4 says humans are resources in the network with the same accounting.
 
 Deletion criterion: this package holds the wager that g0rd0n can act without acting
-unaccountably. Delete it and every Phase 4 minimum test loses its verdict at once — no
+unaccountably. Delete it and `cell_cannot_call_a_tool_outside_its_allowlist`,
+`cell_output_failing_its_schema_is_a_failed_run_not_a_parsed_guess`,
+`transcript_is_interned_and_linked_to_its_playbook_version` and
+`a_cell_reserves_before_it_calls_and_settles_after` lose their verdicts at once — no
 allowlist, no schema, no transcript, no reservation — and a model call becomes a thing that
 happens rather than a thing that was priced, bounded, and recorded.
 """
