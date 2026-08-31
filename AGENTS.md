@@ -989,6 +989,206 @@ It must produce a scientifically useful outcome:
 
 ---
 
+## Post-roadmap integration: automated-research harness integrity
+
+The following phases adapt selected ideas from Anthropic's August 2026 paper
+[*Automated Researchers Can Reliably Mitigate Alignment Failures*](https://www-cdn.anthropic.com/7b1c44894e980876479947dcdd40716278aeeffd/automated-alignment-researchers-august-2026.pdf).
+The paper studies automated alignment post-training on well-characterized,
+measurable failures. Its results do not establish that the same harness improves
+open-ended architecture discovery, formal research, or AGI research.
+
+The transferable contribution is its experimental discipline: results-free
+method write-ups frozen before execution, approval bound to exact code, hidden
+evaluation isolation, multi-benchmark optimization with capability vetoes,
+durable cross-session findings, and explicit monitoring for evaluation gaming.
+These mechanisms complement g0rd0n's existing ledger, resource, budget,
+governor, and research-program boundaries.
+
+Do not copy incidental scale choices such as five parallel researchers, 48-hour
+runs, or GPU post-training. The paper's ablations of the literature survey and
+finding forum are suggestive single runs, and its task has unusually measurable
+feedback. Every integration below must earn its complexity on g0rd0n workloads.
+
+## PR 16 — Frozen method protocol and execution binding
+
+### Goal
+
+Prevent hindsight rationalization and ensure every result belongs to the exact
+approved method and executable artifact.
+
+### Deliver
+
+- `MethodProtocol` schema with title, neutral abstract, motivation, related
+  work, mechanism, data construction, configuration, assumptions, expected
+  result, falsifiers, and compliance declarations;
+- results-free freeze operation producing an immutable content hash;
+- executable/source-tree digest bound to the frozen protocol;
+- approval record naming reviewer, policy version, protocol hash and code hash;
+- execution receipts that refuse unapproved or changed artifacts;
+- explicit supersession rather than mutation when a method changes.
+
+### Tests
+
+- changing one protocol or code byte invalidates approval;
+- a result cannot attach to an unapproved or mismatched execution;
+- freezing rejects result-bearing fields, completed-execution references and
+  missing reproducibility fields;
+- superseded methods and their approvals remain replayable.
+
+### Merge gate
+
+A reviewer can reconstruct what was proposed before execution and prove that the
+reported result came from exactly the artifact they approved.
+
+---
+
+## PR 17 — Isolated evaluation and capability-preservation gates
+
+### Goal
+
+Make benchmark improvement difficult to obtain through leakage, narrow
+overfitting, or unreported regression.
+
+### Deliver
+
+- benchmark roles: `optimization`, `validation`, `test`, and `capability_gate`;
+- an evaluator boundary that accepts an artifact reference, not researcher-made
+  predictions, and returns aggregate results only;
+- inaccessible test payloads/answer keys behind a separate process and
+  permission boundary;
+- normalized headroom metrics with uncertainty and a declared aggregate rule;
+- geometric-mean aggregation where scientifically appropriate, without hiding
+  per-benchmark values;
+- capability and safety vetoes that disqualify a candidate independently of its
+  aggregate score;
+- selection records distinguishing optimization, model selection, and final
+  untouched tests.
+
+### Tests
+
+- research-side code cannot read hidden fixtures or evaluator credentials;
+- a high aggregate score cannot bypass a failed capability gate;
+- a single-benchmark shortcut fails a seeded multi-benchmark transfer case;
+- selection never consumes the final test set;
+- uncertainty and every component score remain visible.
+
+### Merge gate
+
+The harness rejects seeded leakage, metric gaming and capability regression, and
+an untouched test can be run without exposing examples to the research process.
+
+---
+
+## PR 18 — Shared survey, findings forum and fresh-session continuity
+
+### Goal
+
+Let independent research sessions build on prior work without relying on a
+growing opaque context window.
+
+### Deliver
+
+- structured literature-survey entries containing applicability, mechanism,
+  reproduction recipe, limitations and source provenance;
+- novelty/deduplication against existing survey entries;
+- append-only finding records binding method, code, execution, cost, scores,
+  failures and interpretation;
+- a leaderboard projection over valid findings, never a second source of truth;
+- fresh-session briefing generated from mission, survey, approved findings,
+  unresolved disagreements and remaining budget;
+- plateau and duplication-aware stopping rules;
+- human comments represented as attributable findings or review records.
+
+### Tests
+
+- a fresh process reconstructs the same survey, forum and leaderboard;
+- failed and invalid methods remain visible but cannot lead the leaderboard;
+- concurrent findings do not overwrite one another;
+- duplicate proposals are detected before expensive execution;
+- briefing generation is deterministic and excludes hidden test information.
+
+### Merge gate
+
+Two isolated sessions can extend one another's valid work using only durable
+state, while a human can trace every leaderboard entry to evidence and cost.
+
+---
+
+## PR 19 — Research-integrity monitoring and adversarial controls
+
+### Goal
+
+Detect attempts to optimize the harness rather than the scientific question.
+
+### Deliver
+
+- versioned integrity policy covering held-out access, benchmark imitation,
+  scorer tampering, result forgery, seed cherry-picking, judge injection,
+  degenerate outputs and capability-gate evasion;
+- pre-execution inspection of protocol, code, data lineage and permissions;
+- post-execution monitoring over complete invocation and research trajectories;
+- hierarchical chunking for traces too large for one reviewer, retaining the
+  maximum suspicion and cited evidence rather than averaging it away;
+- independent confirmation of flags and an appeal/false-positive record;
+- quarantine status that excludes suspicious findings without deleting them;
+- seeded adversarial fixtures and monitor-quality metrics.
+
+LLM monitor judgments are evidence, not proof. Deterministic controls and actual
+isolation remain primary wherever possible.
+
+### Tests
+
+- seeded leakage, score-file edits, duplicate lucky reruns, finding misbinding
+  and benchmark-format copying are detected or blocked;
+- one suspicious segment cannot disappear through trace summarization;
+- monitor failure and ambiguity fail closed without destroying evidence;
+- benign edge cases measure and preserve the false-positive rate.
+
+### Merge gate
+
+On a pre-registered adversarial suite, the monitored harness rejects more seeded
+integrity violations than the PR-18 harness at an acceptable declared
+false-positive rate and comparable research cost.
+
+---
+
+## PR 20 — Harness ablation and adoption decision
+
+### Goal
+
+Determine which imported mechanisms improve g0rd0n's research outcomes enough
+to justify their complexity.
+
+### Deliver
+
+- pre-registered synthetic and replayable historical research workloads;
+- fixed-governor baseline plus cumulative and component ablations for frozen
+  protocols, evaluation isolation/gates, shared survey/forum, fresh sessions and
+  integrity monitoring;
+- metrics for valid discovery rate, held-out transfer, integrity violations,
+  duplicated work, human review time, wall time, total cost and complexity;
+- paired uncertainty estimates and sensitivity analyses;
+- optional human-originated ideas as a separately costed baseline, not assumed
+  ground truth or mandatory search direction;
+- an ADR accepting, revising, or removing each mechanism;
+- default configuration containing only mechanisms supported by the ablation.
+
+### Tests
+
+- seeded harness defects produce expected metric movements;
+- comparisons use identical workloads and declared budgets;
+- held-out tasks are not used for policy selection;
+- rollback restores the pre-integration fixed governor.
+
+### Merge gate
+
+Adopt no mechanism merely because it worked in the alignment paper. Each default
+must show reproducible improvement in valid research progress per total cost, or
+material integrity improvement with an explicit cost tradeoff, on held-out
+g0rd0n-relevant workloads. Otherwise remove or keep it experimental.
+
+---
+
 # 13. PR review protocol
 
 Every PR must contain:
