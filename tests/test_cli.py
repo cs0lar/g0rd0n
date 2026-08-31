@@ -238,10 +238,26 @@ def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
         "vault",
         "charter",
         "evidence",
+        "portfolio",
     }
     assert cli.VAULT_ACTIONS == ("rebuild",)
     assert cli.CHARTER_ACTIONS == ("show", "commit")
     assert cli.EVIDENCE_ACTIONS == ("search", "seed", "audit")
+    assert cli.PORTFOLIO_ACTIONS == ("seed", "status", "next")
+
+
+def test_portfolio_needs_a_charter_before_it_needs_a_kernel(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Every portfolio action is about a question, so a missing question is the first refusal.
+
+    It fails before the kernel subprocess is started, which is what makes this runnable on a
+    machine with no `knk`: no Wager without a parent Question, checked at the outermost edge.
+    """
+    config_path = write_config(tmp_path)
+
+    assert cli.main(["--config", str(config_path), "portfolio", "status"]) == 1
+    assert "charter:" in capsys.readouterr().err
 
 
 def test_doctor_fails_an_unsigned_charter(tmp_path: Path) -> None:

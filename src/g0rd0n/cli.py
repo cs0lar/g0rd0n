@@ -1,9 +1,10 @@
 """The command line: the only place that reads a config file and the only place that exits.
 
-Seven commands, and no more. `version` says what is installed, `config` says what was loaded,
+Eight commands, and no more. `version` says what is installed, `config` says what was loaded,
 `doctor` says what is missing, `cost` says what was spent and on which claim, `vault`
 rebuilds the projection, `charter` shows the current question and puts it into the kernel,
-and `evidence` searches the literature and audits g0rd0n's own unsourced numbers against it.
+`evidence` searches the literature and audits g0rd0n's own unsourced numbers against it, and
+`portfolio` says what is being bet on and what is worth spending on next.
 
 `evidence` is the first command that reaches the open network, and the first that costs
 anything — wall-clock, against a wager, through the ledger like everything else.
@@ -26,8 +27,11 @@ from typing import NamedTuple
 
 from g0rd0n import __version__, vault
 from g0rd0n.config import Config, ConfigError, load
+from g0rd0n.cortex import allocator, portfolio
 from g0rd0n.cortex import charter as charter_document
+from g0rd0n.cortex.allocator import AllocationError, Board, Exhausted, Next
 from g0rd0n.cortex.charter import CharterError
+from g0rd0n.cortex.wager import WagerError
 from g0rd0n.evidence import seeds
 from g0rd0n.evidence.channel import EvidenceError
 from g0rd0n.evidence.citation import UnresolvableCitation
@@ -53,6 +57,7 @@ COMMANDS: dict[str, str] = {
     "vault": "rebuild the Obsidian vault as a projection of the kernel",
     "charter": "show the well-posed question, or put a signed one into the kernel",
     "evidence": "search primary literature, and audit the seed numbers against it",
+    "portfolio": "show the candidate families, and what is worth spending on next",
 }
 
 #: `vault` takes exactly one action today. It is spelled out rather than implied so that
@@ -67,6 +72,13 @@ CHARTER_ACTIONS = ("show", "commit")
 #: hypotheses; `audit` resolves what a primary source says about each. `audit` is re-runnable:
 #: the seeds are idempotent and a source already supporting a claim is skipped.
 EVIDENCE_ACTIONS = ("search", "seed", "audit")
+
+#: `portfolio seed` commits the nine candidate families and their kill criteria under the
+#: Charter's question; `status` reads the board back, flagging any family still standing only
+#: because nothing tried to kill it; `next` ranks the open survey wagers cheapest-falsifier
+#: first, or says the question is exhausted and hands back the criticisms a new one must
+#: answer. None of them spends: `next` prices a plan, it does not run it.
+PORTFOLIO_ACTIONS = ("seed", "status", "next")
 
 
 class Check(NamedTuple):
@@ -140,6 +152,12 @@ def build_parser() -> argparse.ArgumentParser:
                 choices=CHARTER_ACTIONS,
                 help="print the current charter, or commit a signed one to the kernel",
             )
+        if name == "portfolio":
+            subparser.add_argument(
+                "action",
+                choices=PORTFOLIO_ACTIONS,
+                help="seed the families, show where they stand, or rank what to run next",
+            )
         if name == "evidence":
             subparser.add_argument("action", choices=EVIDENCE_ACTIONS, help="what to do")
             subparser.add_argument(
@@ -188,6 +206,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _charter_command(config, args.action, dry_run=args.dry_run)
         if args.command == "evidence":
             return _evidence(config, args.action, args.query, limit=args.limit)
+        if args.command == "portfolio":
+            return _portfolio(config, args.action)
         return _report(doctor(config))
     except BudgetExhausted as exc:
         print(f"budget: {exc}", file=sys.stderr)
@@ -197,6 +217,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     except (SearchError, FetchError, UnresolvableCitation, EvidenceError) as exc:
         print(f"evidence: {exc}", file=sys.stderr)
+        return 1
+    except (WagerError, AllocationError) as exc:
+        print(f"portfolio: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
         print(f"ledger: {exc}", file=sys.stderr)
@@ -276,6 +299,79 @@ def _print_audit(done: seeds.Audited) -> None:
         print("disagrees:")
         for seed, why in done.unverified:
             print(f"  {seed.hypothesis.name}\n      {why}")
+
+
+def _portfolio(config: Config, action: str) -> int:
+    """Seed the candidate families, read the board, or rank what to run next.
+
+    Every action needs the Charter's question, and `seed` additionally needs that question to
+    be *in the kernel*: committing families under a question nobody committed would create the
+    entity by side effect and leave a portfolio hanging off a charter that was never signed.
+    "No Wager without a parent Question" (AGENTS.md §4), one level up.
+    """
+    question = charter_document.load(config.charter_path, config.charter_definitions).ref
+    with connect_kernel(config) as bridge:
+        if action == "seed":
+            if not bridge.assertions_for(question):
+                print(
+                    f"portfolio: {question} is not in the kernel. Sign CHARTER.md and run "
+                    "`g0rd0n charter commit` first — a portfolio hanging off an uncommitted "
+                    "question is a field of candidates nobody asked a question about.",
+                    file=sys.stderr,
+                )
+                return 1
+            committed = portfolio.commit(bridge, question)
+            print(f"committed {len(committed)} assertions for {len(portfolio.FAMILIES)} families")
+            return 0
+        board = allocator.read(bridge, question, portfolio.FAMILIES)
+
+    if action == "status":
+        _print_board(board)
+        return 0
+    _print_allocation(allocator.allocate(board, portfolio.surveys(question)))
+    return 0
+
+
+def _print_board(board: Board) -> None:
+    print(f"question   {board.question}\n")
+    for standing in board.standings:
+        flags = [
+            flag
+            for flag, on in (
+                ("REFUTED", standing.refuted),
+                ("untested", standing.untested),
+                ("out of patience", standing.out_of_patience),
+                ("control arm", standing.family.control_arm),
+            )
+            if on
+        ]
+        tried = f"{standing.attempts} tried, {standing.conclusive} settled it"
+        print(
+            f"  {standing.belief:.2f}  {standing.family.slug:<30}  {tried:<26}  {'; '.join(flags)}"
+        )
+    print(
+        "\nA family flagged `untested` is standing because nothing has tried to kill it, "
+        "which\nis not the same as having survived (AGENTS.md §Phase 7)."
+    )
+
+
+def _print_allocation(allocation: Next | Exhausted) -> None:
+    """What to run next, or why nothing is worth running."""
+    if isinstance(allocation, Next):
+        best = allocation.run
+        print(f"run next   {best.wager.id}")
+        print(f"           {best.why}")
+        print(f"           P(flip) {best.flip:.2f} x value {best.value:.2f} / ${best.price:.2f}")
+        print(f"           kill: {best.wager.kill}\n")
+    else:
+        print(f"EXHAUSTED  {allocation.reason}\n")
+        print("This question returns to the Question Engine. A superseding CHARTER.md needs a")
+        print("`## Criticisms` section, and these are the ones its own record earned:\n")
+        for criticism in allocation.criticisms:
+            print(f"  - {criticism}")
+        print()
+    for ranked in allocation.ranking:
+        print(f"  {ranked.score:8.5f}  {ranked.wager.label:<38}  {ranked.why}")
 
 
 def _charter_command(config: Config, action: str, *, dry_run: bool) -> int:

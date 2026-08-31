@@ -30,10 +30,21 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 7a — The Wager and pre-registration.** `g0rd0n` can price work, remember it with a
+**Phase 7 — The Wager and the Allocator.** `g0rd0n` can price work, remember it with a
 source attached, show it to a human as a navigable argument, run an agent, compose several
-into a graph, put a question to a person on the same budget, go and get evidence — and now
-open a Wager on what it finds. The allocator that ranks them is Phase 7b.
+into a graph, put a question to a person on the same budget, go and get evidence, open a
+Wager on what it finds — and now decide which Wager is worth running next. The Bench that
+settles them is Phase 8.
+
+**Cheapest falsifier first.** Open wagers are ranked by
+`P(verdict flips the leading candidate) × value(flip) / price`: the wager worth running is not
+the one likeliest to succeed, it is the one that could kill what the programme currently
+believes for the least money. A wager that cannot flip anything scores exactly zero, so
+cheapness is a divisor and never a reason. Pointed at the shipped portfolio, the first thing
+it recommends is **an attempt to kill the control arm** — the highest-prior family, and the one
+whose success would answer the question in the boring direction. And when nothing left could
+change what we believe, it does not return a cheaper wager: it returns `Exhausted`, with the
+criticisms a superseding Charter would have to answer.
 
 **A wager is the hash of what it pre-registered.** Claim, test, price and kill-criterion go
 into the kernel *before* anything runs, and the wager's identity is a hash of exactly those
@@ -109,6 +120,10 @@ uv run g0rd0n charter commit             # ...into the kernel, once a human has 
 uv run g0rd0n evidence search "log-precision transformers"   # primary literature
 uv run g0rd0n evidence seed              # g0rd0n's own unsourced numbers, as hypotheses
 uv run g0rd0n evidence audit             # ...and what a primary source says about each
+
+uv run g0rd0n portfolio seed             # the nine candidate families and their kill criteria
+uv run g0rd0n portfolio status           # where each stands, and which nothing has attacked
+uv run g0rd0n portfolio next             # what is worth running next, and the arithmetic
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,
