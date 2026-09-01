@@ -26,10 +26,18 @@ A family is *not* a dataset. A fixed dataset has a largest instance, and a separ
 that cannot be pushed to larger instances cannot be attacked by pushing it there.
 
 **Worked example:** T1, state tracking under composition. `generate(n, seed)` draws `n`
-elements of the symmetric group S₅ uniformly at random and emits them as a sequence of
-transpositions; `size` is `n`; `check(instance, answer)` recomposes the sequence and returns
-1 if `answer` is the resulting permutation in one-line notation and 0 otherwise. At `n = 3`
-an instance might be `(1 2)(3 4)(1 5)` with the single correct answer `5 1 3 4 2`.
+transpositions of the symmetric group S₅ uniformly at random and emits them in order; `size`
+is `n`; `check(instance, answer)` applies them to the identity permutation `1 2 3 4 5` in
+order, left to right — each `(a b)` exchanging whatever currently occupies position `a` with
+whatever currently occupies position `b` — and returns 1 if `answer` is the resulting
+permutation in one-line notation and 0 otherwise. At `n = 3` an instance might be
+`(1 2)(3 4)(1 5)`, which takes `1 2 3 4 5` to `2 1 3 4 5` to `2 1 4 3 5` to `5 1 4 3 2`, the
+single correct answer.
+
+The example shows every intermediate state deliberately. Its predecessor showed only the
+final one and had dropped a step — it gave `5 1 3 4 2`, which is the answer with `(3 4)`
+having had no effect — and the error survived review because there was nothing to check it
+against. A worked example that shows its working is one a reader can falsify.
 
 ## Checker
 
@@ -44,9 +52,9 @@ evaluation, and it makes the capability metric depend on the thing being measure
 
 **Worked example:** T1's checker takes the instance's transposition list and the answer
 string, parses the answer as a permutation of `{1..5}`, and returns 1 on an exact match. An
-answer of `"I think it is 5 1 3 4 2"` scores 0, because the family's contract says the answer
-is a permutation in one-line notation and nothing else. A parse failure scores 0, not an
-error.
+answer of `"I think it is 5 1 4 3 2"` scores 0 even though the permutation in it is the right
+one, because the family's contract says the answer is a permutation in one-line notation and
+nothing else. A parse failure scores 0, not an error.
 
 ## Inference budget (B)
 
@@ -118,11 +126,22 @@ are not equally good, and the per-attempt figure alone would not have said so.
 
 ## Capability at a budget (cap)
 
-`cap(system, T, B, P, N)` is the largest size `n` at which the system's mean checker score
-over the family's pre-registered instance set is at least the family's threshold `θ_T`, with
-the lower end of a 95% bootstrap confidence interval also at least `θ_T`, every instance
-answered inside `B` and inside the family's wall-clock ceiling `W`, and the system prepared
-inside `P` for the declared `N`.
+A size `n` *clears* when the system's mean checker score over the family's pre-registered
+instance set at `n` is at least the family's threshold `θ_T`, the lower end of a 95% bootstrap
+confidence interval is also at least `θ_T`, every instance was answered inside `B` and inside
+the family's wall-clock ceiling `W`, and the system was prepared inside `P` for the declared
+`N`.
+
+`cap(system, T, B, P, N)` is the largest measured size `n` such that `n` **and every measured
+size below it** clear. It is undefined — not zero — when the smallest measured size does not
+clear, because zero is a size somebody could have measured.
+
+The requirement that everything below `n` clears is what makes `cap` an ordinal rather than a
+maximum. Capability on these families is expected to fall away as size grows, so a size that
+clears above one that failed is evidence about the instance set rather than about the system:
+either the failed size is unrepresentative or the high one is, and the reading that treats the
+high one as the capability is the reading that flatters. Taking the prefix costs a real result
+only when the curve is genuinely non-monotone, and in that case the honest report is the curve.
 
 An ordinal, not an accuracy. Accuracy on a set of mixed sizes reports a system that solves
 everything up to `n = 5` and a system that solves everything up to `n = 50` as the same
@@ -132,7 +151,10 @@ entire question.
 **Worked example:** at `θ_T = 0.9`, a system scores 1.00 at `n = 8`, 0.97 at `n = 12`, 0.91
 at `n = 16` with a 95% CI of [0.86, 0.95], and 0.62 at `n = 20`. Its `cap` is 12, not 16: the
 point estimate at 16 clears the threshold but the interval does not, and a `cap` that moves
-when someone reruns the same instances is not measuring the system.
+when someone reruns the same instances is not measuring the system. Had the same system also
+scored 0.94 at `n = 24` with a CI of [0.91, 0.97], its `cap` would still be 12 — 16 did not
+clear, so nothing above 16 is reportable, and one high point standing above a failed size is
+the signature of a lucky instance set rather than of a capability that returned.
 
 ## Control arm
 

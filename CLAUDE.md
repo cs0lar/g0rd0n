@@ -11,11 +11,15 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–7 are built; Phase 8 (the Bench) is next.** The package is `src/g0rd0n/`:
+**Phases 0–8a are built; Phase 8b (energy, arms, and the protocol) is next.** The package is
+`src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
+- `content.py` — `version_of`: a thing's version is the hash of what it is. Depends on
+  nothing, so every layer can reach it.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
-  `evidence search|seed|audit`, `portfolio seed|status|next`, and nothing else.
+  `evidence search|seed|audit`, `portfolio seed|status|next`, `bench families|sample`, and
+  nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -41,7 +45,10 @@ Not Do Yet**.
   `combine` and `sources_for`, and `cells.playbook` for `version_of`.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
-  prose). Returns results and commits nothing. Depends on nothing else in `g0rd0n`.
+  prose), `tasks.py` (the three chartered task families: a generator, a size and a checker,
+  hashed together), `capability.py` (the score curve, its bootstrap interval, and `cap`).
+  Returns results and commits nothing. Depends on `config` and `content` and nothing else in
+  `g0rd0n`.
 - `evidence/` — `citation.py` (resolve: fetch, check, hash, intern), `channel.py` (commit:
   dedup, corroborate, preserve disagreement, retract), `seeds.py` (the five unsourced numbers
   in AGENTS.md §The Question, and the audit of them). Depends on `instruments`, `kernel`, and
@@ -228,6 +235,22 @@ Four things about `cortex/charter.py` that look arbitrary and are not:
 
 `commit` refuses an unsigned charter and refuses to commit the same one twice. See ADR 0007.
 
+**The chain of `refines` edges only exists for charters that were committed**, and today none
+were. `charter-8fb7f2095506` supersedes `charter-329c9f00e917`, which supersedes
+`agents-md-seed-framing`, and both charters are unsigned — so if only the current one is ever
+signed, its `refines` edges point at a question the kernel holds nothing else about, and the
+six criticisms that retired the seed framing never become edges at all. **A supersession is
+committed oldest first**, and the procedure is in
+[`docs/charter/signing.md`](docs/charter/signing.md), rehearsed against a throwaway kernel.
+
+Two things about that which are easy to get wrong. Signing does **not** change a charter's
+version — the signature is the one section outside the hash — so a superseded charter
+recovered from git can be signed today and still be the charter it was. And `charter.commit`
+does not check that the question it supersedes is in the kernel, though `wager.register` makes
+exactly that check one layer down; the ordering is therefore a convention, not an invariant,
+and the reason the asymmetry is still there is a bootstrap problem written down in that file.
+`g0rd0n` never signs a charter, its own or any other.
+
 ## The Evidence Channel
 
 **A fetch that succeeds is not a citation that resolves.** arXiv answers a fabricated
@@ -317,6 +340,43 @@ registered *before the experiment physically ran* — Phase 8's Bench closes tha
 
 The per-Wager price cap is not built here and must not be: it already *is* the pre-registered
 price, enforced by `Overspend`. See ADR 0012.
+
+## The Bench
+
+`instruments/tasks.py` is the three chartered families; `instruments/capability.py` turns
+their scores into the Charter's `cap`. Six things that catch people out:
+
+- **A family's version covers its two functions *and* the whole file.** Hashing the `def`s
+  alone misses the helper `t3_check` calls; hashing the file alone misses which callables a
+  `Family` value names, and the first draft did exactly that and versioned a stub checker
+  identically to the real one. Both, therefore — and the cost is that editing T3 re-versions
+  T1, which is conservative in the only safe direction.
+- **An `InstanceSet` is versioned by its instances, never by `(sizes, count, seed)`.** The
+  recipe is stable across a generator rewrite, and a generator rewrite is exactly when two
+  runs quoting "seed 11" saw different questions.
+- **`curve` refuses one size, and `MINIMUM = 40` is derived, not chosen.** One size is an
+  accuracy wearing a curve's name, and by the time a number reaches a report the shape is
+  gone. Forty is `1 / 0.025`: below it the 95% interval's tail is under one instance wide, so
+  the endpoint is the most extreme instance rather than a quantile.
+- **`cap` needs the interval to clear, not just the mean, and it is a prefix.** The largest
+  measured size such that it *and every measured size below it* clears — so the walk up the
+  curve stops at the first failure and a lone high point above it is not reported. The
+  bootstrap is seeded from a content hash of the scores, never `hash()`, which is randomised
+  per process. Same trap the vault projection has a test for.
+- **A checker is total and its contract is strict.** Prose scores 0.0 and never raises; a
+  *correct* answer with an explanation appended also scores 0.0, because a checker that
+  skipped tokens it did not understand would let an arm hedge.
+- **This is `cap` without its budget, which is not yet a result.** Nothing in 8a measures a
+  joule or a second. §Capability metric says a `cap` without the budget it was measured at is
+  not a result; the type that pairs them is 8b's.
+
+Building the bench found two defects in the Charter itself, and both were fixed the only way
+they can be — by superseding it. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`**
+with four criticisms: the T1 worked example gave the composition with one step dropped, it
+left the composition convention unstated (which is why the error survived), its §Task family
+prose described a generator nobody could write, and `cap` took a maximum where it wanted a
+prefix. ADR 0013 carries the amendments. Neither charter is signed, so neither is in the
+kernel — see the note under *The Charter* about what that costs.
 
 ## Working rules that differ from ordinary repos
 

@@ -1,10 +1,15 @@
 """The command line: the only place that reads a config file and the only place that exits.
 
-Eight commands, and no more. `version` says what is installed, `config` says what was loaded,
+Nine commands, and no more. `version` says what is installed, `config` says what was loaded,
 `doctor` says what is missing, `cost` says what was spent and on which claim, `vault`
 rebuilds the projection, `charter` shows the current question and puts it into the kernel,
-`evidence` searches the literature and audits g0rd0n's own unsourced numbers against it, and
-`portfolio` says what is being bet on and what is worth spending on next.
+`evidence` searches the literature and audits g0rd0n's own unsourced numbers against it,
+`portfolio` says what is being bet on and what is worth spending on next, and `bench` prints
+the chartered task families and lets a person score one instance by hand.
+
+`bench` is there because AGENTS.md §Phase 8 asks for a bench "small enough that one person can
+verify it is not lying", and the cheapest way to verify a checker is to read one instance and
+grade it yourself.
 
 `evidence` is the first command that reaches the open network, and the first that costs
 anything — wall-clock, against a wager, through the ledger like everything else.
@@ -35,9 +40,10 @@ from g0rd0n.cortex.wager import WagerError
 from g0rd0n.evidence import seeds
 from g0rd0n.evidence.channel import EvidenceError
 from g0rd0n.evidence.citation import UnresolvableCitation
-from g0rd0n.instruments import fetch, search
+from g0rd0n.instruments import fetch, search, tasks
 from g0rd0n.instruments.fetch import FetchError
 from g0rd0n.instruments.search import SearchError
+from g0rd0n.instruments.tasks import TaskError
 from g0rd0n.kernel import KernelError
 from g0rd0n.kernel import connect as connect_kernel
 from g0rd0n.ledger import BudgetExhausted, JournalError, Ledger, LedgerError
@@ -58,6 +64,7 @@ COMMANDS: dict[str, str] = {
     "charter": "show the well-posed question, or put a signed one into the kernel",
     "evidence": "search primary literature, and audit the seed numbers against it",
     "portfolio": "show the candidate families, and what is worth spending on next",
+    "bench": "show the chartered task families, or print and score one instance",
 }
 
 #: `vault` takes exactly one action today. It is spelled out rather than implied so that
@@ -79,6 +86,12 @@ EVIDENCE_ACTIONS = ("search", "seed", "audit")
 #: first, or says the question is exhausted and hands back the criticisms a new one must
 #: answer. None of them spends: `next` prices a plan, it does not run it.
 PORTFOLIO_ACTIONS = ("seed", "status", "next")
+
+#: `bench families` lists what CHARTER.md charters, with the version each is measured under;
+#: `bench sample` prints one instance exactly as an arm would be shown it, and grades an
+#: `--answer` with the family's own checker. Neither runs an arm and neither spends: this is
+#: the affordance that lets a person check the bench by hand before trusting a curve from it.
+BENCH_ACTIONS = ("families", "sample")
 
 
 class Check(NamedTuple):
@@ -158,6 +171,20 @@ def build_parser() -> argparse.ArgumentParser:
                 choices=PORTFOLIO_ACTIONS,
                 help="seed the families, show where they stand, or rank what to run next",
             )
+        if name == "bench":
+            subparser.add_argument(
+                "action",
+                choices=BENCH_ACTIONS,
+                help="list the chartered families, or print and score one instance",
+            )
+            subparser.add_argument(
+                "--family", default=tasks.FAMILIES[0].slug, help="which family to sample from"
+            )
+            subparser.add_argument("--size", type=int, default=6, help="the instance's size")
+            subparser.add_argument("--seed", type=int, default=0, help="the instance's seed")
+            subparser.add_argument(
+                "--answer", help="score this answer with the family's own checker"
+            )
         if name == "evidence":
             subparser.add_argument("action", choices=EVIDENCE_ACTIONS, help="what to do")
             subparser.add_argument(
@@ -208,6 +235,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _evidence(config, args.action, args.query, limit=args.limit)
         if args.command == "portfolio":
             return _portfolio(config, args.action)
+        if args.command == "bench":
+            return _bench(args.action, args.family, args.size, args.seed, args.answer)
         return _report(doctor(config))
     except BudgetExhausted as exc:
         print(f"budget: {exc}", file=sys.stderr)
@@ -220,6 +249,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     except (WagerError, AllocationError) as exc:
         print(f"portfolio: {exc}", file=sys.stderr)
+        return 1
+    except TaskError as exc:
+        print(f"bench: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
         print(f"ledger: {exc}", file=sys.stderr)
@@ -372,6 +404,35 @@ def _print_allocation(allocation: Next | Exhausted) -> None:
         print()
     for ranked in allocation.ranking:
         print(f"  {ranked.score:8.5f}  {ranked.wager.label:<38}  {ranked.why}")
+
+
+def _bench(action: str, slug: str, size: int, seed: int, answer: str | None) -> int:
+    """List the chartered families, or print one instance and optionally grade an answer.
+
+    Neither action runs an arm, reaches the network, or touches the kernel. The Charter's
+    `cap` needs a meter and a budget beside it; what this prints is the questions and the
+    checker, which is the half a person can verify unaided.
+    """
+    if action == "families":
+        for chartered in tasks.FAMILIES:
+            print(f"{chartered.slug}  {chartered.version}  {chartered.what}")
+            print(
+                f"      size is {chartered.size_is}; threshold {chartered.threshold:g}; "
+                f"ceiling {chartered.ceiling_seconds:g}s per instance"
+            )
+            print(f"      answer: {chartered.answers}\n")
+        print("A family is added by superseding CHARTER.md, never by appending to this list.")
+        return 0
+
+    chartered = tasks.family(slug)
+    instance = chartered.instance(size, seed)
+    print(f"{chartered.slug}@{chartered.version}  size {size}  seed {seed}\n")
+    print(instance.question)
+    print(f"\nchecker reads   {instance.data}")
+    if answer is not None:
+        print(f"answer          {answer!r}")
+        print(f"score           {chartered.score(instance, answer):.4f}")
+    return 0
 
 
 def _charter_command(config: Config, action: str, *, dry_run: bool) -> int:

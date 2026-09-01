@@ -110,11 +110,18 @@ result on a family nobody chartered is a result nobody pre-registered.
 
 ## Capability metric
 
-`cap(system, T, B, P, N)`: the largest instance size `n` at which the system's mean checker
-score over the family's pre-registered instance set is at least the family's threshold `θ_T`,
-with the lower bound of a 95% bootstrap confidence interval also at or above `θ_T`, every
-instance answered inside `B` and inside `W`, prepared inside `P` for the declared `N`.
-Thresholds: `θ_T = 0.9` for `T1` and `T3`, `0.8` for `T2`.
+A size `n` *clears* when the system's mean checker score over the family's pre-registered
+instance set is at least the family's threshold `θ_T`, the lower bound of a 95% bootstrap
+confidence interval is also at or above `θ_T`, every instance was answered inside `B` and
+inside `W`, and the system was prepared inside `P` for the declared `N`. Thresholds:
+`θ_T = 0.9` for `T1` and `T3`, `0.8` for `T2`.
+
+`cap(system, T, B, P, N)`: the largest measured instance size `n` such that `n` and every
+measured size below it clears. Undefined, not zero, when the smallest measured size does not
+clear. The prefix is what makes `cap` an ordinal rather than a maximum: capability on these
+families falls away as size grows, so a size that clears above one that failed is evidence
+about the instance set rather than about the system, and reporting it as the capability is
+the reading that flatters.
 
 Reported as a curve — score against size — never as a single accuracy. A system that solves
 everything to `n = 5` and one that solves everything to `n = 50` report the same accuracy on
@@ -186,33 +193,31 @@ the same protocol, and every comparison it appears in is flagged as mixed.
 
 ## Definitions
 
-9c5e3fd67e8c
+fb20f37ee47f
 
 ## Supersedes
 
-agents-md-seed-framing
+charter-329c9f00e917
 
 ## Criticisms
 
-- The seed asks for a paradigm "provably more powerful than transformers", which nothing can
-  settle: both are Turing-complete, so no separation on computability exists. Its own §The
-  Turing trap says so and stops one step short of the consequence — that the question must
-  name a resource and hold it fixed, or be abandoned.
-- The seed offers three separation shapes and correctly defers the choice to this Charter.
-  Until the choice is made, nothing the seed licenses can be pre-registered or scored, which
-  is exactly why the deferral means the seed cannot stand as the operative question.
-- The seed's S3 — joules at matched capability — is unrunnable for every candidate in the
-  seed's own portfolio, because matched capability with a frontier transformer is a
-  precondition none of them meets. A shape whose first measurement can never be taken is not a
-  shape. Holding the energy fixed and measuring the capability inverts it and is measurable on
-  day one.
-- The seed names a 20 W target without saying whether that budget includes the energy of
-  learning. A transformer's inference is cheap and its training is not; a brain has no
-  separate training phase. Without a declared preparation budget and deployment population,
-  every comparison to 20 W is an accounting choice presented as a measurement.
-- The seed's energy metric — "joules per unit of task-relevant information" — names no
-  instrument that can measure task-relevant information. A metric with no instrument cannot
-  produce a result, only a number somebody derived.
-- The seed's phrase "energy profiles approximating or improving on a brain's" fixes no task
-  and no capability threshold, so it is satisfied by any system that does nothing at 20 W. A
-  budget constrains only once a task family and a threshold are named beside it.
+- Its definitions file gave the wrong answer for its own worked example of a task family:
+  `(1 2)(3 4)(1 5)` was said to compose to `5 1 3 4 2`, which is the composition with `(3 4)`
+  having had no effect. The correct answer is `5 1 4 3 2`. A charter whose one worked example
+  of what a task family *is* does not compute is a charter whose central artifact nobody
+  checked, and it was found by implementing the family rather than by reading the file.
+- The same worked example left the composition convention unstated — "recomposes the
+  sequence" does not distinguish exchanging positions from exchanging values, or left-to-right
+  from right-to-left, and the four readings give three different answers. That ambiguity is
+  why the arithmetic error survived: there was no stated rule for the example to be checked
+  against, so an implementer had to guess and could not have known they were guessing.
+- Its §Task family definition said `generate` "draws `n` elements of the symmetric group S₅
+  and emits them as a sequence of transpositions", which describes neither the example beside
+  it nor any generator that yields `n` transpositions — decomposing `n` group elements gives
+  a sequence whose length nobody controls, so `size` would not have ordered instances by the
+  quantity it claimed to.
+- Its `cap` was "the largest size `n` at which" the thresholds are met, which reports a size
+  that clears standing above a size that failed. On families where capability falls away as
+  size grows, such a point is evidence about the instance set rather than about the system,
+  and taking the maximum is the reading that flatters. `cap` is now the largest size such
+  that it and every measured size below it clear.

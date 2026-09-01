@@ -30,11 +30,31 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 7 — The Wager and the Allocator.** `g0rd0n` can price work, remember it with a
-source attached, show it to a human as a navigable argument, run an agent, compose several
-into a graph, put a question to a person on the same budget, go and get evidence, open a
-Wager on what it finds — and now decide which Wager is worth running next. The Bench that
-settles them is Phase 8.
+**Phase 8a — The task suite and the capability metric.** `g0rd0n` can price work, remember it
+with a source attached, show it to a human as a navigable argument, run an agent, compose
+several into a graph, put a question to a person on the same budget, go and get evidence, open
+a Wager on what it finds, decide which Wager is worth running next — and now generate the
+questions that would settle one, and say what a score on them means. The meter, the arms, and
+the protocol that commits a result are Phase 8b.
+
+**A capability is an ordinal with an interval under it, never an accuracy.** The three
+chartered families each ship an instance generator, a size parameter and a machine-executable
+checker, versioned together by content hash; a curve of one size is refused, because a system
+that solves everything to size 5 and one that solves everything to size 50 report the same
+accuracy on a mixed set if the mixture is chosen right. `cap` is the largest size whose mean
+*and* whose 95% bootstrap lower bound clear the family's threshold, **and below which every
+measured size clears too** — a capability that moves when somebody reruns the same instances
+is not measuring the system, and a lone high point standing above a size that failed is
+evidence about the instance set rather than about the system. Every checker is total:
+prose scores zero rather than raising, and so does a right answer with an explanation appended,
+because a checker that skipped what it did not understand would let an arm hedge. And what is
+computed here is the score half only: a `cap` with no budget beside it is not a result under
+the Charter.
+
+`g0rd0n bench sample --family T1 --size 4 --seed 3 --answer "5 1 4 2 3"` prints one instance
+exactly as an arm would see it and grades an answer typed by hand, because AGENTS.md asks for
+a bench "small enough that one person can verify it is not lying" and that is the cheapest way
+to check one.
 
 **Cheapest falsifier first.** Open wagers are ranked by
 `P(verdict flips the leading candidate) × value(flip) / price`: the wager worth running is not
@@ -83,6 +103,14 @@ to stop asking the question a given way without writing down why. A human review
 naming the version they signed, and `g0rd0n charter commit` refuses an unsigned one. That is a
 gate, not a notification.
 
+That machinery has now been used in anger. Building the task suite found that the definitions
+file's one worked example of what a task family *is* did not compute — it gave the composition
+with a step dropped — and that it left the composition convention unstated, which is why the
+error had survived. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`** with four
+criticisms, including a `cap` that took a maximum where it wanted a prefix. The question
+changed because implementing it was how anyone found out, which is the only reason a question
+ever should.
+
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is
 derived from. Three caps — session, campaign, standing — stop a run where it said it would
@@ -124,6 +152,10 @@ uv run g0rd0n evidence audit             # ...and what a primary source says abo
 uv run g0rd0n portfolio seed             # the nine candidate families and their kill criteria
 uv run g0rd0n portfolio status           # where each stands, and which nothing has attacked
 uv run g0rd0n portfolio next             # what is worth running next, and the arithmetic
+
+uv run g0rd0n bench families             # the three chartered task families, and their versions
+uv run g0rd0n bench sample --family T2   # one instance as an arm sees it, and what it is checked against
+uv run g0rd0n bench sample --answer "5 1 4 2 3"   # ...graded by the family's own checker
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,

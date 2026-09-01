@@ -6,8 +6,8 @@ import pytest
 from test_charter import signed, written
 
 from g0rd0n import __version__, cli
-from g0rd0n.cells.playbook import version_of
 from g0rd0n.config import Config, load
+from g0rd0n.content import version_of
 from g0rd0n.cortex import charter
 from g0rd0n.ledger import Cost, open_session
 
@@ -239,11 +239,49 @@ def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
         "charter",
         "evidence",
         "portfolio",
+        "bench",
     }
     assert cli.VAULT_ACTIONS == ("rebuild",)
     assert cli.CHARTER_ACTIONS == ("show", "commit")
     assert cli.EVIDENCE_ACTIONS == ("search", "seed", "audit")
     assert cli.PORTFOLIO_ACTIONS == ("seed", "status", "next")
+    assert cli.BENCH_ACTIONS == ("families", "sample")
+
+
+def test_bench_prints_an_instance_and_grades_an_answer_by_hand(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """AGENTS.md §Phase 8 asks for a bench one person can verify is not lying.
+
+    This is that affordance: the question exactly as an arm sees it, the machine form the
+    checker reads, and the score for an answer typed by the person reading it. No kernel, no
+    network, no model, and nothing spent.
+    """
+    config_path = write_config(tmp_path)
+    argv = ["--config", str(config_path), "bench", "sample", "--family", "T1", "--size", "3"]
+
+    assert cli.main([*argv, "--seed", "0"]) == 0
+    printed = capsys.readouterr().out
+    assert "checker reads" in printed
+
+    data = printed.partition("checker reads")[2].strip()
+    state = [1, 2, 3, 4, 5]
+    for step in data.split():
+        left, right = (int(part) - 1 for part in step.split("-"))
+        state[left], state[right] = state[right], state[left]
+
+    assert cli.main([*argv, "--seed", "0", "--answer", " ".join(str(x) for x in state)]) == 0
+    assert "score           1.0000" in capsys.readouterr().out
+
+
+def test_bench_refuses_a_family_nobody_chartered(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A result on a family nobody chartered is a result nobody pre-registered."""
+    config_path = write_config(tmp_path)
+
+    assert cli.main(["--config", str(config_path), "bench", "sample", "--family", "T9"]) == 1
+    assert "bench:" in capsys.readouterr().err
 
 
 def test_portfolio_needs_a_charter_before_it_needs_a_kernel(

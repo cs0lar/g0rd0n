@@ -37,8 +37,8 @@ from typing import Any, Protocol
 
 from g0rd0n.cells.cell import CellError, Schema, check_output
 from g0rd0n.cells.model import Turn
-from g0rd0n.cells.playbook import version_of
 from g0rd0n.cells.runtime import Run, RunId, record
+from g0rd0n.content import version_of
 from g0rd0n.kernel import Bridge, Ref
 from g0rd0n.ledger import Cost, Ledger
 
