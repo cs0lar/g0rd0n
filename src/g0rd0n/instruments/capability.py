@@ -1,10 +1,20 @@
 """Capability at a budget: the score curve, its bootstrap interval, and the ordinal `cap`.
 
 `CHARTER.md` §Capability metric and `docs/charter/definitions.md` §Capability at a budget: the
-largest size at which the mean checker score over the pre-registered instance set clears the
-family's threshold, *with the lower end of a 95% bootstrap interval also clearing it*. Both
-halves matter. The point estimate alone gives a number that moves when somebody reruns the
-same instances, and a capability that moves under a rerun is not measuring the system.
+largest size that clears *and below which every measured size clears*, where clearing means
+the mean checker score over the pre-registered instance set is at least the family's
+threshold **and the lower end of a 95% bootstrap interval is too**.
+
+Both halves of "clears" matter. The point estimate alone gives a number that moves when
+somebody reruns the same instances, and a capability that moves under a rerun is not measuring
+the system.
+
+The prefix matters for a different reason. `cap` is an ordinal, and taking the largest
+clearing size would report a lone high point standing above a size that failed — which, on
+families whose capability falls away as size grows, is evidence about the instance set rather
+than about the system. The first version of this module took the maximum, which
+`charter-8fb7f2095506` criticised and replaced; `a_cap_stops_at_the_first_size_that_fails`
+is that clause.
 
 **A curve, never an accuracy.** The Charter is explicit that raw accuracy alone is not a
 result: a system that solves everything to size 5 and one that solves everything to size 50
@@ -127,10 +137,17 @@ def curve(family: Family, points: tuple[Point, ...]) -> Curve:
 
 
 def cap(family: Family, measured: Curve) -> int | None:
-    """The largest size whose mean *and* interval clear the family's threshold, or `None`.
+    """The largest size that clears *and* below which every measured size clears, or `None`.
 
-    `None` is a real answer — "this arm does not reach the threshold at any size we measured" —
-    and is not the same as zero, which would be a size somebody measured.
+    A prefix, not a maximum. The Charter's §Capability metric asks for the largest `n` such
+    that `n` and every measured size below it clears, which means the walk up the curve stops
+    at the first failure and a size that clears above it is not reported. On families whose
+    capability falls away as size grows, such a point is evidence about the instance set
+    rather than about the system — either the failed size is unrepresentative or the high one
+    is — and taking the maximum is the reading that flatters.
+
+    `None` is a real answer — "this arm does not clear at the smallest size we measured" — and
+    is not the same as zero, which would be a size somebody could have measured.
 
     Refuses a curve whose family version does not match. That check exists because the failure
     it prevents is silent: a checker edited between two arms' runs produces two curves that
@@ -142,8 +159,12 @@ def cap(family: Family, measured: Curve) -> int | None:
             f"{family.slug}@{family.version}; a curve measured against another version of the "
             "checker is a curve about another family"
         )
-    clearing = [point.size for point in measured.points if point.clears(family.threshold)]
-    return max(clearing) if clearing else None
+    reached: int | None = None
+    for point in measured.points:  # size-ordered by `curve`
+        if not point.clears(family.threshold):
+            break
+        reached = point.size
+    return reached
 
 
 @cache

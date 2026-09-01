@@ -235,6 +235,14 @@ Four things about `cortex/charter.py` that look arbitrary and are not:
 
 `commit` refuses an unsigned charter and refuses to commit the same one twice. See ADR 0007.
 
+**The chain of `refines` edges only exists for charters that were committed**, and today none
+were. `charter-8fb7f2095506` supersedes `charter-329c9f00e917`, which supersedes
+`agents-md-seed-framing`, and both charters are unsigned — so if only the current one is ever
+signed, its `refines` edges point at a question the kernel holds nothing else about, and the
+six criticisms that retired the seed framing never become edges at all. The record is complete
+only if the predecessor is signed and committed first. That is a human's call and cannot be
+worked around here: signing is the Phase 5 gate, and `g0rd0n` does not sign its own charter.
+
 ## The Evidence Channel
 
 **A fetch that succeeds is not a citation that resolves.** arXiv answers a fabricated
@@ -342,9 +350,11 @@ their scores into the Charter's `cap`. Six things that catch people out:
   accuracy wearing a curve's name, and by the time a number reaches a report the shape is
   gone. Forty is `1 / 0.025`: below it the 95% interval's tail is under one instance wide, so
   the endpoint is the most extreme instance rather than a quantile.
-- **`cap` needs the interval to clear, not just the mean**, and the bootstrap is seeded from a
-  content hash of the scores — never `hash()`, which is randomised per process. Same trap the
-  vault projection has a test for.
+- **`cap` needs the interval to clear, not just the mean, and it is a prefix.** The largest
+  measured size such that it *and every measured size below it* clears — so the walk up the
+  curve stops at the first failure and a lone high point above it is not reported. The
+  bootstrap is seeded from a content hash of the scores, never `hash()`, which is randomised
+  per process. Same trap the vault projection has a test for.
 - **A checker is total and its contract is strict.** Prose scores 0.0 and never raises; a
   *correct* answer with an explanation appended also scores 0.0, because a checker that
   skipped tokens it did not understand would let an arm hedge.
@@ -352,11 +362,13 @@ their scores into the Charter's `cap`. Six things that catch people out:
   joule or a second. §Capability metric says a `cap` without the budget it was measured at is
   not a result; the type that pairs them is 8b's.
 
-Two things recorded rather than fixed, both in ADR 0013: the definitions file's T1 worked
-example does not compose under any reading (`the_definitions_worked_example_for_t1_does_not_
-compose` pins the correct arithmetic), and `cap` is "the largest size that clears" exactly as
-worded, which is fragile on a non-monotone curve. Both live inside the hash `CHARTER.md`
-names, so either is a superseding Charter and a fresh signature, never a code change.
+Building the bench found two defects in the Charter itself, and both were fixed the only way
+they can be — by superseding it. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`**
+with four criticisms: the T1 worked example gave the composition with one step dropped, it
+left the composition convention unstated (which is why the error survived), its §Task family
+prose described a generator nobody could write, and `cap` took a maximum where it wanted a
+prefix. ADR 0013 carries the amendments. Neither charter is signed, so neither is in the
+kernel — see the note under *The Charter* about what that costs.
 
 ## Working rules that differ from ordinary repos
 

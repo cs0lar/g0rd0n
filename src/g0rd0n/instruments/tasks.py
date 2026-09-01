@@ -40,16 +40,15 @@ did exactly that and versioned them the same, which
 belt-and-braces is that editing T3 re-versions T1, and it is worth paying: it errs towards
 refusing a stale comparison and never towards accepting one.
 
-**One arithmetic disagreement with the definitions file, recorded and not fixed.** Its §Task
-family worked example composes `(1 2)(3 4)(1 5)` and gives `5 1 3 4 2`. Under the convention
-the rest of that example fixes — each transposition swaps the entries at those two positions,
-applied left to right — the answer is `5 1 4 3 2`, and no other reading of "compose these"
-reproduces the published one: the doc's answer leaves positions 3 and 4 exactly as it found
-them, which is `(3 4)` having no effect. This module implements the convention and
-`the_definitions_worked_example_for_t1_does_not_compose` pins the arithmetic, so that nobody
-later "fixes" the code to match the prose. The prose is inside the hash the Charter names, so
-correcting it supersedes the Charter and costs a fresh signature; that is Phase 5's business
-and a criticism a superseding charter can quote, not a drive-by edit here.
+**T1's composition convention is fixed by the Charter, and this file agrees with it.** A
+transposition `(a b)` exchanges whatever currently occupies *position* `a` with whatever
+occupies position `b`, applied left to right from the identity. That is now stated in
+`docs/charter/definitions.md` §Task family, with every intermediate state shown, because
+`charter-329c9f00e917` left it unstated and published an answer for its own worked example
+that was the composition with one step dropped. Implementing the family is what found it;
+`charter-8fb7f2095506` is what fixed it. `t1_composes_the_definitions_worked_example` walks
+the same intermediate states the file does, so the code and the Charter cannot drift apart
+without one of them going red.
 
 Deletion criterion: this module holds the wager that a capability claim is a claim about a
 family somebody can regenerate. Delete it and `a_task_familys_version_covers_the_source_of_

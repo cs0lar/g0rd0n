@@ -42,8 +42,10 @@ chartered families each ship an instance generator, a size parameter and a machi
 checker, versioned together by content hash; a curve of one size is refused, because a system
 that solves everything to size 5 and one that solves everything to size 50 report the same
 accuracy on a mixed set if the mixture is chosen right. `cap` is the largest size whose mean
-*and* whose 95% bootstrap lower bound clear the family's threshold — a capability that moves
-when somebody reruns the same instances is not measuring the system. Every checker is total:
+*and* whose 95% bootstrap lower bound clear the family's threshold, **and below which every
+measured size clears too** — a capability that moves when somebody reruns the same instances
+is not measuring the system, and a lone high point standing above a size that failed is
+evidence about the instance set rather than about the system. Every checker is total:
 prose scores zero rather than raising, and so does a right answer with an explanation appended,
 because a checker that skipped what it did not understand would let an arm hedge. And what is
 computed here is the score half only: a `cap` with no budget beside it is not a result under
@@ -100,6 +102,14 @@ different charter. Replacing one commits a `refines` edge per criticism, and the
 to stop asking the question a given way without writing down why. A human reviewer signs it,
 naming the version they signed, and `g0rd0n charter commit` refuses an unsigned one. That is a
 gate, not a notification.
+
+That machinery has now been used in anger. Building the task suite found that the definitions
+file's one worked example of what a task family *is* did not compute — it gave the composition
+with a step dropped — and that it left the composition convention unstated, which is why the
+error had survived. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`** with four
+criticisms, including a `cap` that took a maximum where it wanted a prefix. The question
+changed because implementing it was how anyone found out, which is the only reason a question
+ever should.
 
 Every dollar is reserved against exactly one claim *before* the work starts, spent against
 that reservation or not at all, and settled into an append-only journal that every total is

@@ -161,11 +161,16 @@ def test_the_shipped_charter_and_definitions_are_one_document() -> None:
 
     Not asserted to be signed: a human reviewer signs it, and until they do `charter commit`
     refuses. That refusal is the Phase 5 gate working, not a broken test.
+
+    What it supersedes is deliberately not pinned by name. Supersession is the expected
+    lifecycle of this file, so pinning the predecessor would make every new question a test
+    edit and would assert nothing that `parse` does not already enforce. The shape is what
+    matters: it replaces something, and it says why.
     """
     current = charter.load(REPO / "CHARTER.md", REPO / "docs" / "charter" / "definitions.md")
 
-    assert current.supersedes == "agents-md-seed-framing"
-    assert len(current.criticisms) >= 3, "the seed framing is retired with its reasons attached"
+    assert current.supersedes is not None, "the seed framing is not the operative question"
+    assert current.criticisms, "no supersession without a criticism"
     assert set(current.elements) == set(charter.ELEMENTS)
     assert "Turing" in current.elements["Question"], "the Turing trap is what this first attacks"
 

@@ -119,21 +119,28 @@ def test_t3_scores_a_stream_with_nothing_in_it_only_for_reporting_nothing() -> N
     assert T3.score(empty, "3") == 0.0
 
 
-def test_the_definitions_worked_example_for_t1_does_not_compose() -> None:
-    """docs/charter/definitions.md §Task family gives `5 1 3 4 2` for `(1 2)(3 4)(1 5)`.
+def test_t1_composes_the_definitions_worked_example() -> None:
+    """docs/charter/definitions.md §Task family, worked through: `(1 2)(3 4)(1 5)`.
 
-    It does not compose to that under any reading. Applying the transpositions in order as
-    position swaps gives `5 1 4 3 2`; as value swaps, `2 5 4 3 1`; right to left, `2 5 4 3 1`
-    and `5 1 4 3 2` respectively. The published answer leaves positions 3 and 4 as it found
-    them, which is `(3 4)` having had no effect.
-
-    Pinned as a test rather than fixed in the file, because that file is inside the hash
-    `CHARTER.md` names: correcting it supersedes the Charter and costs a fresh signature. This
-    is here so that nobody later reconciles the two by changing the code.
+    `charter-329c9f00e917` gave `5 1 3 4 2` here, which is the composition with `(3 4)` having
+    had no effect, and left the convention unstated so there was nothing to check it against.
+    `charter-8fb7f2095506` fixes both: the transpositions exchange *positions*, applied left to
+    right, and the example shows every intermediate state. This test walks the same states, so
+    the code and the Charter cannot drift apart without one of them going red.
     """
     instance = Instance(family="T1", size=3, seed=0, question="", data="1-2 3-4 1-5")
     assert T1.score(instance, "5 1 4 3 2") == 1.0
-    assert T1.score(instance, "5 1 3 4 2") == 0.0
+    assert T1.score(instance, "5 1 3 4 2") == 0.0, "the superseded charter's answer"
+
+    for step, state in enumerate(("2 1 3 4 5", "2 1 4 3 5", "5 1 4 3 2"), start=1):
+        partial = Instance(
+            family="T1",
+            size=step,
+            seed=0,
+            question="",
+            data=" ".join(instance.data.split()[:step]),
+        )
+        assert T1.score(partial, state) == 1.0
 
 
 def test_t2_withholds_the_queried_cue_since_the_last_change_point() -> None:
@@ -272,8 +279,22 @@ def test_a_cap_needs_its_interval_to_clear_not_just_its_mean() -> None:
 
 
 def test_a_cap_is_none_when_nothing_clears_rather_than_zero() -> None:
-    """Zero is a size somebody measured. `None` is "not at any size we looked at"."""
+    """Zero is a size somebody could have measured. `None` is "not even at the smallest"."""
     assert cap(T1, curve(T1, (scores(4, 30, 30), scores(8, 10, 50)))) is None
+
+
+def test_a_cap_stops_at_the_first_size_that_fails() -> None:
+    """CHARTER.md §Capability metric, as `charter-8fb7f2095506` words it: a prefix.
+
+    The size-32 point clears on its own and is not reported, because 16 did not. On a family
+    whose capability falls away as size grows, a point standing above a failure is evidence
+    about the instance set rather than about the system, and taking the maximum is the reading
+    that flatters. `charter-329c9f00e917` said "the largest size at which", which reported 32.
+    """
+    measured = curve(T1, (scores(8, 60, 0), scores(16, 30, 30), scores(32, 60, 0)))
+
+    assert measured.points[2].clears(T1.threshold), "the lone high point does clear on its own"
+    assert cap(T1, measured) == 8
 
 
 def test_a_curve_measured_against_another_version_of_the_checker_is_refused() -> None:

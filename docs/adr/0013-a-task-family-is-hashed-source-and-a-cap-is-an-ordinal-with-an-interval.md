@@ -92,6 +92,10 @@ difference: a system scoring 0.91 at `n = 16` with a 95% interval of [0.86, 0.95
 of 12, not 16. A `cap` that took the point estimate alone would move when somebody reran the
 same instances, and a capability that moves under a rerun is not measuring the system.
 
+> **Amended 2026-09-01.** And `cap` is a **prefix**, not a maximum: the largest measured size
+> such that it and every measured size below it clears. See the amendment under *Non-monotone
+> curves* below, and `charter-8fb7f2095506` §Criticisms.
+
 The bootstrap is seeded from a content hash of the scores themselves. Not a clock, not a
 global, and not `hash()` — Python randomises string hashing per process, so a `hash()`-derived
 seed would be reproducible inside one interpreter and different in the next.
@@ -138,6 +142,13 @@ to show the arm is one edit away from scoring against a hint.
   tightening it to "the largest size such that every smaller size also clears" is a
   superseding Charter and not a code change. Recorded here as a criticism a new Charter could
   quote.
+
+  > **Amended 2026-09-01, on the maintainer's instruction.** The Charter was superseded.
+  > `charter-8fb7f2095506` replaces `charter-329c9f00e917` and words `cap` as the largest
+  > measured size such that it **and every measured size below it** clears, undefined rather
+  > than zero when the smallest does not. `capability.cap` now walks the size-ordered points
+  > and stops at the first failure; `a_cap_stops_at_the_first_size_that_fails` is the clause.
+  > This failure mode is discharged, not open.
 - **A comment re-versions three families.** Editing a docstring in `tasks.py` changes all
   three family versions and therefore invalidates every pre-registered instance set against
   them. Loud, conservative, and annoying. The alternative leaks silent changes, which is
@@ -173,6 +184,16 @@ to show the arm is one edit away from scoring against a hint.
   the hash `CHARTER.md` names, so correcting it supersedes the Charter and costs a fresh
   signature. `the_definitions_worked_example_for_t1_does_not_compose` pins the arithmetic so
   that nobody reconciles the two by changing the code instead.
+
+  > **Amended 2026-09-01, on the maintainer's instruction.** Superseded and fixed.
+  > `charter-8fb7f2095506` corrects the arithmetic, states the convention that was missing —
+  > `(a b)` exchanges *positions*, applied left to right — and shows every intermediate
+  > state, because an example that shows only its result cannot be checked. A third defect in
+  > the same section went with them: the prose said `generate` "draws `n` elements of S₅ and
+  > emits them as a sequence of transpositions", which describes neither the example beside it
+  > nor any generator yielding `n` transpositions. The test is now
+  > `t1_composes_the_definitions_worked_example` and walks the file's own intermediate states,
+  > so the code and the Charter cannot drift without one going red.
 
 ## How it is tested
 
