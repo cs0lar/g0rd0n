@@ -239,9 +239,17 @@ Four things about `cortex/charter.py` that look arbitrary and are not:
 were. `charter-8fb7f2095506` supersedes `charter-329c9f00e917`, which supersedes
 `agents-md-seed-framing`, and both charters are unsigned — so if only the current one is ever
 signed, its `refines` edges point at a question the kernel holds nothing else about, and the
-six criticisms that retired the seed framing never become edges at all. The record is complete
-only if the predecessor is signed and committed first. That is a human's call and cannot be
-worked around here: signing is the Phase 5 gate, and `g0rd0n` does not sign its own charter.
+six criticisms that retired the seed framing never become edges at all. **A supersession is
+committed oldest first**, and the procedure is in
+[`docs/charter/signing.md`](docs/charter/signing.md), rehearsed against a throwaway kernel.
+
+Two things about that which are easy to get wrong. Signing does **not** change a charter's
+version — the signature is the one section outside the hash — so a superseded charter
+recovered from git can be signed today and still be the charter it was. And `charter.commit`
+does not check that the question it supersedes is in the kernel, though `wager.register` makes
+exactly that check one layer down; the ordering is therefore a convention, not an invariant,
+and the reason the asymmetry is still there is a bootstrap problem written down in that file.
+`g0rd0n` never signs a charter, its own or any other.
 
 ## The Evidence Channel
 
