@@ -52,7 +52,7 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
-from g0rd0n.cells.playbook import version_of
+from g0rd0n.content import version_of
 from g0rd0n.evidence.channel import rivals
 from g0rd0n.kernel import AssertionId, Bridge, Claim, EntityId, Provenance, Ref, ToolError
 from g0rd0n.ledger import ZERO, Cost, Ledger, Reservation

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from g0rd0n.cells.playbook import version_of
+from g0rd0n.content import version_of
 from g0rd0n.cortex import charter
 from g0rd0n.kernel import Bridge, Ref
 

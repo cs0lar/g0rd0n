@@ -4,10 +4,12 @@ A playbook is a file in `playbooks/`, not runtime state and not a string built a
 site. AGENTS.md §Phase 12 makes them versioned artifacts in the repo so that a change to how
 g0rd0n thinks arrives as a diff someone reviews.
 
-**A playbook's version is the hash of its bytes.** Not a number in a field someone remembers
-to bump: an edited prompt with a stale version number would attribute a run to text that never
-produced it, and there is no test that could catch it — the record would be internally
-consistent and wrong. Hashing removes the possibility rather than warning about it.
+**A playbook's version is the hash of its bytes** (`content.version_of`). Not a number in a
+field someone remembers to bump: an edited prompt with a stale version number would attribute
+a run to text that never produced it, and there is no test that could catch it — the record
+would be internally consistent and wrong. Hashing removes the possibility rather than warning
+about it. The hash covers the raw bytes, so a whitespace-only edit is still a new version:
+whitespace changes prompts.
 
 Deletion criterion: this module holds the wager that any result can be traced to the exact
 prompt that produced it. Delete it and `transcript_is_interned_and_linked_to_its_playbook_
@@ -15,32 +17,18 @@ version` loses its verdict, prompts go back to being string literals at call sit
 "which version of the critic said that?" stops having an answer.
 """
 
-import hashlib
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from g0rd0n.content import version_of
 from g0rd0n.kernel import Ref
-
-#: How much of the digest goes into the entity name. Twelve hex characters is 48 bits, which
-#: is far past collision risk for a repository of prompts, and short enough to read.
-DIGEST_LENGTH = 12
 
 KNOWN_KEYS = frozenset({"role", "system", "model", "max_turns"})
 
 
 class PlaybookError(Exception):
     """A playbook is missing, malformed, or says something a cell cannot play."""
-
-
-def version_of(content: bytes) -> str:
-    """The version of a prompt: the hash of the exact bytes that will be sent.
-
-    Shared with `human.HumanQuery`, whose question is its prompt. Anything a run can be
-    attributed to is versioned the same way, so "which text produced this?" has one answer
-    and one mechanism.
-    """
-    return hashlib.sha256(content).hexdigest()[:DIGEST_LENGTH]
 
 
 @dataclass(frozen=True)

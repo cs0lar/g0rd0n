@@ -42,7 +42,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from g0rd0n.cells.playbook import version_of
+from g0rd0n.content import version_of
 from g0rd0n.kernel import AssertionId, Bridge, Claim, Provenance, Ref, VocabularyError
 
 #: What the Charter must fix, per AGENTS.md §Phase 5, and the statement each one becomes in

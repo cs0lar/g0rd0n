@@ -11,11 +11,15 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–7 are built; Phase 8 (the Bench) is next.** The package is `src/g0rd0n/`:
+**Phases 0–8a are built; Phase 8b (energy, arms, and the protocol) is next.** The package is
+`src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
+- `content.py` — `version_of`: a thing's version is the hash of what it is. Depends on
+  nothing, so every layer can reach it.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
-  `evidence search|seed|audit`, `portfolio seed|status|next`, and nothing else.
+  `evidence search|seed|audit`, `portfolio seed|status|next`, `bench families|sample`, and
+  nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -41,7 +45,10 @@ Not Do Yet**.
   `combine` and `sources_for`, and `cells.playbook` for `version_of`.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
-  prose). Returns results and commits nothing. Depends on nothing else in `g0rd0n`.
+  prose), `tasks.py` (the three chartered task families: a generator, a size and a checker,
+  hashed together), `capability.py` (the score curve, its bootstrap interval, and `cap`).
+  Returns results and commits nothing. Depends on `config` and `content` and nothing else in
+  `g0rd0n`.
 - `evidence/` — `citation.py` (resolve: fetch, check, hash, intern), `channel.py` (commit:
   dedup, corroborate, preserve disagreement, retract), `seeds.py` (the five unsourced numbers
   in AGENTS.md §The Question, and the audit of them). Depends on `instruments`, `kernel`, and
@@ -317,6 +324,39 @@ registered *before the experiment physically ran* — Phase 8's Bench closes tha
 
 The per-Wager price cap is not built here and must not be: it already *is* the pre-registered
 price, enforced by `Overspend`. See ADR 0012.
+
+## The Bench
+
+`instruments/tasks.py` is the three chartered families; `instruments/capability.py` turns
+their scores into the Charter's `cap`. Six things that catch people out:
+
+- **A family's version covers its two functions *and* the whole file.** Hashing the `def`s
+  alone misses the helper `t3_check` calls; hashing the file alone misses which callables a
+  `Family` value names, and the first draft did exactly that and versioned a stub checker
+  identically to the real one. Both, therefore — and the cost is that editing T3 re-versions
+  T1, which is conservative in the only safe direction.
+- **An `InstanceSet` is versioned by its instances, never by `(sizes, count, seed)`.** The
+  recipe is stable across a generator rewrite, and a generator rewrite is exactly when two
+  runs quoting "seed 11" saw different questions.
+- **`curve` refuses one size, and `MINIMUM = 40` is derived, not chosen.** One size is an
+  accuracy wearing a curve's name, and by the time a number reaches a report the shape is
+  gone. Forty is `1 / 0.025`: below it the 95% interval's tail is under one instance wide, so
+  the endpoint is the most extreme instance rather than a quantile.
+- **`cap` needs the interval to clear, not just the mean**, and the bootstrap is seeded from a
+  content hash of the scores — never `hash()`, which is randomised per process. Same trap the
+  vault projection has a test for.
+- **A checker is total and its contract is strict.** Prose scores 0.0 and never raises; a
+  *correct* answer with an explanation appended also scores 0.0, because a checker that
+  skipped tokens it did not understand would let an arm hedge.
+- **This is `cap` without its budget, which is not yet a result.** Nothing in 8a measures a
+  joule or a second. §Capability metric says a `cap` without the budget it was measured at is
+  not a result; the type that pairs them is 8b's.
+
+Two things recorded rather than fixed, both in ADR 0013: the definitions file's T1 worked
+example does not compose under any reading (`the_definitions_worked_example_for_t1_does_not_
+compose` pins the correct arithmetic), and `cap` is "the largest size that clears" exactly as
+worded, which is fragile on a non-monotone curve. Both live inside the hash `CHARTER.md`
+names, so either is a superseding Charter and a fresh signature, never a code change.
 
 ## Working rules that differ from ordinary repos
 
