@@ -30,12 +30,36 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 8a — The task suite and the capability metric.** `g0rd0n` can price work, remember it
-with a source attached, show it to a human as a navigable argument, run an agent, compose
-several into a graph, put a question to a person on the same budget, go and get evidence, open
-a Wager on what it finds, decide which Wager is worth running next — and now generate the
-questions that would settle one, and say what a score on them means. The meter, the arms, and
-the protocol that commits a result are Phase 8b.
+**Phase 8b — The meter and what it licenses.** `g0rd0n` can price work, remember it with a
+source attached, show it to a human as a navigable argument, run an agent, compose several
+into a graph, put a question to a person on the same budget, go and get evidence, open a Wager
+on what it finds, decide which Wager is worth running next, generate the questions that would
+settle one and say what a score on them means — and now say what a joule figure is allowed to
+be quoted as. The arms and the run loop that commits a result are Phase 8c.
+
+**A joule figure carries its error bar and its basis, or it does not exist.** A measurement
+comes out of a calibrated session and nothing else: a session with no calibration record
+produces no energy result — a refusal, not a result with a wide bar, because a wide bar is a
+number somebody can still quote. Anything a model produced instead of a meter is labelled
+`estimated` at the type level, and the only expression in which two instruments' numbers meet
+is a `Comparison`, which derives its mixed flag from the two bases and prints it. On-die
+counters are refused as a run's primary figure, because the fans, the PSU losses, the host and
+the network they cannot see are exactly where a comparison against 20 W is settled.
+
+`g0rd0n bench meters` says what this machine could read a joule with. On the machine this was
+built on the answer is nothing: there is no wall-plug meter, and RAPL has been root-only since
+CVE-2020-8694 — so every energy figure it can produce today is an analytic estimate, and every
+comparison it appears in is flagged. That is the correct answer rather than a gap, and it costs
+one command instead of one run to find out.
+
+**A `cap` and the budget it was measured at are one object or neither is a result.** `Result`
+carries the curve, `B`, `P`, `N`, the instrument and the config hash, all required, and there
+is no rendering that prints the headline without them. A run that overspent its budget has no
+`cap` at all rather than a `cap` with a caveat, because the caveat is the part that gets
+dropped when the number is quoted somewhere else. The budget test divides by instances
+*attempted* so an arm cannot come in under `B` by declining what it expects to fail;
+`J_solved` divides by instances *solved* so an arm that answers fast and wrong is charged for
+it.
 
 **A capability is an ordinal with an interval under it, never an accuracy.** The three
 chartered families each ship an instance generator, a size parameter and a machine-executable
@@ -156,6 +180,7 @@ uv run g0rd0n portfolio next             # what is worth running next, and the a
 uv run g0rd0n bench families             # the three chartered task families, and their versions
 uv run g0rd0n bench sample --family T2   # one instance as an arm sees it, and what it is checked against
 uv run g0rd0n bench sample --answer "5 1 4 2 3"   # ...graded by the family's own checker
+uv run g0rd0n bench meters               # what this machine could read a joule with, if anything
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,
