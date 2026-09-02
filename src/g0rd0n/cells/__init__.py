@@ -1,15 +1,20 @@
 """Cells: agents and humans, with playbooks, allowlists, and typed output.
 
-Six modules, one mechanism each. `playbook` is a versioned prompt, identified by the hash of
+Seven modules, one mechanism each. `playbook` is a versioned prompt, identified by the hash of
 its own bytes. `cell` is what an agent *is* — four fields of data, no base class. `model` is
 the seam a provider sits behind, plus the one provider, plus the network allowlist. `runtime`
 is the function that plays a cell: reserve, converse, check, record, settle. `human` is the
 same, for a person: a question, a deadline, and a declared fallback. `graph` composes them,
-as a dict.
+as a dict. `arm` is the odd one out and is here because it calls a model: a system *under
+evaluation*, its versioned config, and the loop that asks it every instance of a set.
 
 A Cell commits assertions; an Instrument does not (AGENTS.md §6). That is why `Tool.run`
 returns text and why nothing in `cell` or `model` imports the bridge — only `runtime`,
 `human`, and `graph` do, and only to record what happened.
+
+`arm` commits nothing either, and for a third reason: it is the *subject* of an experiment
+rather than something doing g0rd0n's work, so its 120 answers are not 120 claims about the
+world. The one commit an evaluation makes is `cortex/protocol.py`'s single `measures`.
 
 A person and a model return the same `Run` and reserve from the same ledger, because
 AGENTS.md §Phase 4 says humans are resources in the network with the same accounting.
@@ -23,6 +28,9 @@ allowlist, no schema, no transcript, no reservation — and a model call becomes
 happens rather than a thing that was priced, bounded, and recorded.
 """
 
+from g0rd0n.cells.arm import CONTROL, Answered, Arm, ArmError, Attempt, attempt
+from g0rd0n.cells.arm import baselines as arm_baselines
+from g0rd0n.cells.arm import load as load_arm
 from g0rd0n.cells.cell import (
     Cell,
     CellError,
@@ -53,8 +61,13 @@ from g0rd0n.cells.runtime import Run, RunId, run, transcript
 
 __all__ = [
     "ANSWER",
+    "CONTROL",
+    "Answered",
     "Anthropic",
+    "Arm",
+    "ArmError",
     "Asker",
+    "Attempt",
     "Cell",
     "CellError",
     "FileDrop",
@@ -78,8 +91,11 @@ __all__ = [
     "ToolNotAllowed",
     "ToolResult",
     "Turn",
+    "arm_baselines",
     "ask_human",
+    "attempt",
     "check_output",
+    "load_arm",
     "load_playbook",
     "order",
     "run",

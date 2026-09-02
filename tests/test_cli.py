@@ -245,7 +245,7 @@ def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
     assert cli.CHARTER_ACTIONS == ("show", "commit")
     assert cli.EVIDENCE_ACTIONS == ("search", "seed", "audit")
     assert cli.PORTFOLIO_ACTIONS == ("seed", "status", "next")
-    assert cli.BENCH_ACTIONS == ("families", "sample", "meters")
+    assert cli.BENCH_ACTIONS == ("families", "sample", "meters", "baselines")
 
 
 def test_bench_prints_an_instance_and_grades_an_answer_by_hand(
@@ -293,6 +293,26 @@ def test_bench_meters_says_whether_this_machine_can_measure_a_joule_at_all(
     assert "wall-plug meter" in printed
     assert "none configured on this machine" in printed
     assert "flagged as mixed" in printed
+
+
+def test_bench_baselines_prints_the_control_arms_hash_and_its_tuning(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A retuned control arm is a different arm, and the hash is how anyone notices.
+
+    Printed against the config this repository actually ships, so a comparison quoting an old
+    hash is visible as a comparison against an arm that no longer exists. Reads only: no
+    command in this CLI runs an evaluation, because the first thing to spend on 240 model
+    calls should be a wager somebody registered.
+    """
+    config_path = write_config(tmp_path)
+
+    assert cli.main(["--config", str(config_path), "bench", "baselines"]) == 0
+    printed = capsys.readouterr().out
+    assert "transformer-control" in printed
+    assert "transformer on claude-sonnet-5" in printed
+    assert "tuned with 0 J" in printed
+    assert "tuned first" in printed
 
 
 def test_bench_refuses_a_family_nobody_chartered(

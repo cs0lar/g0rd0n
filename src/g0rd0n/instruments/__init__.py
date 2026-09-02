@@ -41,6 +41,7 @@ from g0rd0n.instruments.capability import (
     cap,
     curve,
     interval,
+    margin,
 )
 from g0rd0n.instruments.fetch import (
     MAX_BYTES,
@@ -130,5 +131,6 @@ __all__ = [
     "family",
     "instances",
     "interval",
+    "margin",
     "session",
 ]

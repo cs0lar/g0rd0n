@@ -36,11 +36,17 @@ arrives with the meter, and the type that pairs them is the one that may be repo
 this module computes is the score half, and quoting it alone would be quoting a capability
 with no budget beside it, which §Capability metric says is not a result.
 
+**A separation is a `cap` margin whose interval excludes zero.** Protocol step 5 will not let
+a separation be claimed on two `cap` numbers that differ, only on a difference that survives
+resampling, and `margin` is that arithmetic. It is here rather than in `cortex` because it is
+a fact about two curves and knows nothing about wagers.
+
 Deletion criterion: this module holds the wager that a capability claim is an ordinal with an
 interval under it rather than an average somebody liked. Delete it and
 `a_single_size_is_an_accuracy_not_a_curve`, `a_cap_needs_its_interval_to_clear_not_just_its_
-mean` and `a_curve_measured_against_another_version_of_the_checker_is_refused` lose their
-verdicts, and "cap 34 on T1" goes back to meaning whatever the person quoting it meant.
+mean`, `a_curve_measured_against_another_version_of_the_checker_is_refused` and
+`two_caps_that_differ_are_not_a_separation` lose their verdicts, and "cap 34 on T1" goes back
+to meaning whatever the person quoting it meant.
 
 An instrument: it returns results and commits nothing (AGENTS.md §6).
 """
@@ -164,6 +170,65 @@ def cap(family: Family, measured: Curve) -> int | None:
         if not point.clears(family.threshold):
             break
         reached = point.size
+    return reached
+
+
+def margin(family: Family, candidate: Curve, control: Curve) -> tuple[float, float]:
+    """A 95% interval on `cap(candidate) - cap(control)`, by resampling both curves.
+
+    Protocol step 5: a separation may be claimed only when this interval excludes zero. Two
+    `cap` numbers that differ are not a separation — `cap` is a step function of the scores,
+    so one instance flipping at the threshold size moves it by a whole size, and a difference
+    that large can come out of two identical systems.
+
+    **The resampled `cap` uses the mean alone, not the mean and the interval.** `Point.clears`
+    asks for both because a single curve's `cap` must not move when somebody reruns the same
+    instances; a bootstrap over `cap` measures exactly that movement, directly. Applying both
+    would count the same uncertainty twice, and it would do so as a bootstrap inside a
+    bootstrap — four million resamples for a number that does not get better. Stated here
+    because it is a choice, not an oversight.
+
+    **An undefined `cap` counts as zero, and only here.** `cap` returns `None` for an arm that
+    does not clear the smallest measured size, which is not a size anybody measured. A margin
+    needs a number, and "below every size on this curve" is ordinally below all of them, so
+    zero is the reading that preserves the order. Everywhere else `None` stays `None`.
+    """
+    for measured in (candidate, control):
+        if measured.family != family.slug or measured.family_version != family.version:
+            raise TaskError(
+                f"this curve is {measured.family}@{measured.family_version} and the family is "
+                f"{family.slug}@{family.version}; two arms are compared on one checker"
+            )
+    if candidate.sizes != control.sizes:
+        raise TaskError(
+            f"the arms were measured at {candidate.sizes} and {control.sizes}; "
+            "CHARTER.md §Matched-capability protocol step 3: the identical instance set"
+        )
+
+    left = tuple((point.size, point.scores) for point in candidate.points)
+    right = tuple((point.size, point.scores) for point in control.points)
+    rng = random.Random(version_of(repr((left, right)).encode("utf-8")))
+    differences = sorted(
+        _resampled(rng, left, family.threshold) - _resampled(rng, right, family.threshold)
+        for _ in range(RESAMPLES)
+    )
+    tail = (1.0 - CONFIDENCE) / 2.0
+    return (
+        differences[int(tail * RESAMPLES)],
+        differences[min(RESAMPLES - 1, int((1.0 - tail) * RESAMPLES))],
+    )
+
+
+def _resampled(
+    rng: random.Random, points: tuple[tuple[int, tuple[float, ...]], ...], threshold: float
+) -> int:
+    """One bootstrap draw of a curve's `cap`, on the mean alone. Zero for undefined."""
+    reached = 0
+    for size, scores in points:  # size-ordered by `curve`
+        drawn = [rng.choice(scores) for _ in scores]
+        if sum(drawn) / len(drawn) < threshold:
+            break
+        reached = size
     return reached
 
 

@@ -5,13 +5,19 @@ Nine commands, and no more. `version` says what is installed, `config` says what
 rebuilds the projection, `charter` shows the current question and puts it into the kernel,
 `evidence` searches the literature and audits g0rd0n's own unsourced numbers against it,
 `portfolio` says what is being bet on and what is worth spending on next, and `bench` prints
-the chartered task families, lets a person score one instance by hand, and says what this
-machine could read a joule with.
+the chartered task families, lets a person score one instance by hand, says what this machine
+could read a joule with, and shows the control arm's versioned config.
 
 `bench` is there because AGENTS.md §Phase 8 asks for a bench "small enough that one person can
 verify it is not lying", and the cheapest way to verify a checker is to read one instance and
 grade it yourself. `bench meters` is the same idea one layer down: the cheapest way to find
 out whether a measured energy result is possible on a machine is to ask before running on it.
+
+**No command runs an evaluation.** All four `bench` actions read; none spends. Running two
+arms over a pre-registered instance set is `cortex.protocol.evaluate`, which takes a
+`Registration` — so the first thing to spend on 240 model calls is a wager somebody registered,
+not a shell command somebody typed. AGENTS.md §Do Not Do Yet: unattended spend above a
+declared cap.
 
 `evidence` is the first command that reaches the open network, and the first that costs
 anything — wall-clock, against a wager, through the ledger like everything else.
@@ -33,6 +39,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 from g0rd0n import __version__, vault
+from g0rd0n.cells import arm
+from g0rd0n.cells.arm import ArmError
 from g0rd0n.config import Config, ConfigError, load
 from g0rd0n.cortex import allocator, portfolio
 from g0rd0n.cortex import charter as charter_document
@@ -67,7 +75,7 @@ COMMANDS: dict[str, str] = {
     "charter": "show the well-posed question, or put a signed one into the kernel",
     "evidence": "search primary literature, and audit the seed numbers against it",
     "portfolio": "show the candidate families, and what is worth spending on next",
-    "bench": "show the chartered task families, or print and score one instance",
+    "bench": "show the task families, the meters, and the control arm; score one instance",
 }
 
 #: `vault` takes exactly one action today. It is spelled out rather than implied so that
@@ -96,8 +104,12 @@ PORTFOLIO_ACTIONS = ("seed", "status", "next")
 #: machine has and what the Charter will let each of them be used for. None runs an arm and
 #: none spends: this is the affordance that lets a person check the bench by hand before
 #: trusting a curve from it — and `meters` is where they find out whether a measured energy
-#: result is possible here at all, before a run rather than after one.
-BENCH_ACTIONS = ("families", "sample", "meters")
+#: result is possible here at all, before a run rather than after one. `bench baselines`
+#: prints the versioned control-arm configs in `bench/baselines/` with the hash each would be
+#: measured under, so a retuned arm is visible as a different hash before a comparison quotes
+#: it. None of the four runs an arm and none spends: an evaluation is `cortex.protocol`'s,
+#: under a registered wager, and deliberately has no shell command that starts it.
+BENCH_ACTIONS = ("families", "sample", "meters", "baselines")
 
 
 class Check(NamedTuple):
@@ -256,7 +268,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (WagerError, AllocationError) as exc:
         print(f"portfolio: {exc}", file=sys.stderr)
         return 1
-    except (TaskError, MeterError) as exc:
+    except (TaskError, MeterError, ArmError) as exc:
         print(f"bench: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
@@ -421,6 +433,8 @@ def _bench(action: str, slug: str, size: int, seed: int, answer: str | None) -> 
     """
     if action == "meters":
         return _meters()
+    if action == "baselines":
+        return _baselines()
 
     if action == "families":
         for chartered in tasks.FAMILIES:
@@ -441,6 +455,30 @@ def _bench(action: str, slug: str, size: int, seed: int, answer: str | None) -> 
     if answer is not None:
         print(f"answer          {answer!r}")
         print(f"score           {chartered.score(instance, answer):.4f}")
+    return 0
+
+
+def _baselines() -> int:
+    """Print the versioned control-arm configs, and the tuning each one declares.
+
+    The hash is the point. A retuned control arm is a different arm, so a comparison quoting
+    an old hash is a comparison against an arm that no longer exists — and the only way to
+    notice is to be able to read the current one without running anything.
+    """
+    found = arm.baselines()
+    if not found:
+        print(f"no baseline configs under {arm.BASELINES}")
+        return 0
+    for baseline in found:
+        note = f": {baseline.tuning_note}" if baseline.tuning_note else ""
+        print(f"{baseline.name}  {baseline.version}  {baseline.kind} on {baseline.model}")
+        print(
+            f"      max_tokens {baseline.max_tokens}; tuned with {baseline.tuning_joules:g} J{note}"
+        )
+    print()
+    print("CHARTER.md §Matched-capability protocol step 2: the control arm is tuned first, with")
+    print("at least as much energy as the candidate, and both figures are recorded in the")
+    print("result. An evaluation whose candidate was tuned harder than this is refused.")
     return 0
 
 
