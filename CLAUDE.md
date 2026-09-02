@@ -11,15 +11,15 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–8a are built; Phase 8b (energy, arms, and the protocol) is next.** The package is
+**Phases 0–8b are built; Phase 8c (the arms and the run loop) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `content.py` — `version_of`: a thing's version is the hash of what it is. Depends on
   nothing, so every layer can reach it.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
-  `evidence search|seed|audit`, `portfolio seed|status|next`, `bench families|sample`, and
-  nothing else.
+  `evidence search|seed|audit`, `portfolio seed|status|next`, `bench families|sample|meters`,
+  and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -46,9 +46,10 @@ Not Do Yet**.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
   prose), `tasks.py` (the three chartered task families: a generator, a size and a checker,
-  hashed together), `capability.py` (the score curve, its bootstrap interval, and `cap`).
-  Returns results and commits nothing. Depends on `config` and `content` and nothing else in
-  `g0rd0n`.
+  hashed together), `capability.py` (the score curve, its bootstrap interval, and `cap`),
+  `meter.py` (what read a joule, its calibration, and its error bar), `bench.py` (what a joule
+  figure and a `cap` are allowed to be reported as). Returns results and commits nothing.
+  Depends on `config` and `content` and nothing else in `g0rd0n`.
 - `evidence/` — `citation.py` (resolve: fetch, check, hash, intern), `channel.py` (commit:
   dedup, corroborate, preserve disagreement, retract), `seeds.py` (the five unsourced numbers
   in AGENTS.md §The Question, and the audit of them). Depends on `instruments`, `kernel`, and
@@ -366,9 +367,44 @@ their scores into the Charter's `cap`. Six things that catch people out:
 - **A checker is total and its contract is strict.** Prose scores 0.0 and never raises; a
   *correct* answer with an explanation appended also scores 0.0, because a checker that
   skipped tokens it did not understand would let an arm hedge.
-- **This is `cap` without its budget, which is not yet a result.** Nothing in 8a measures a
-  joule or a second. §Capability metric says a `cap` without the budget it was measured at is
-  not a result; the type that pairs them is 8b's.
+- **8a is `cap` without its budget, which is not yet a result.** Nothing in `tasks.py` or
+  `capability.py` measures a joule or a second. §Capability metric says a `cap` without the
+  budget it was measured at is not a result; `bench.Result` is the type that pairs them.
+
+## The meter
+
+`instruments/meter.py` is what read a joule; `instruments/bench.py` is what a joule figure and
+a `cap` are allowed to be reported as. Both are pure functions of values — no arm, no model,
+no network, no kernel, and on this machine no meter either. Seven things that catch people out:
+
+- **There is no way to hold energy that is not a `Joules`**, and a `Joules` carries its error
+  bar, its instrument, and its basis. `Basis` is derived from the instrument's `Role` through
+  a table, never set by a caller — a default for "was this measured?" is a lie that is true
+  most of the time.
+- **No calibration, no result — a refusal, not a wide bar.** `Session` has a `Calibration`
+  field with no default, so the type already makes it unconstructible; `meter.session` takes
+  `Calibration | None` anyway, because that is the shape the failure arrives in.
+- **The error bar floors at the meter's least count.** Taken literally, the Charter's "the
+  deviation is the error bar" gives `0 ± 0 J` for a meter that agrees with its load exactly —
+  a claim of a perfect instrument, arrived at by the meter being good.
+- **`minus` refuses two instruments; `compare` is the only place two meet.** That confines the
+  scale-error assumption (a relative error passes through an idle subtraction unchanged, and
+  a ratio across two instruments adds them in quadrature) and makes the mixed flag unloseable.
+  A mixed comparison is **flagged, never refused** — refusing it would make the only available
+  evidence about neuromorphic substrates unreportable.
+- **A secondary instrument cannot carry a run.** Counters are what every machine has and a
+  wall meter is what it usually does not, so quoting RAPL as the run's energy is every bench's
+  path of least resistance and reports the joules of the easiest part to instrument.
+- **Two denominators, and neither may do the other's job.** `per_attempted` for the budget
+  test, so an arm cannot come in under `B` by declining what it expects to fail; `j_solved`
+  for efficiency, so an arm that answers fast and wrong is charged. `k = 0` gives `None`.
+- **A run outside its budget has no `cap` at all**, not a `cap` with a caveat — the caveat is
+  the part that gets dropped when the number is quoted elsewhere. And `W` is deliberately not
+  a `Budget` field: it is already inside `Family.spec`'s hash.
+
+`g0rd0n bench meters` reports that this machine has no primary instrument and cannot read RAPL
+either (root-only since CVE-2020-8694), so every energy figure it can produce today is an
+`estimated` one. That is the correct answer, not a gap. See ADR 0014.
 
 Building the bench found two defects in the Charter itself, and both were fixed the only way
 they can be — by superseding it. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`**

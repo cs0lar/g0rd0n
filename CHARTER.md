@@ -221,3 +221,8 @@ charter-329c9f00e917
   size grows, such a point is evidence about the instance set rather than about the system,
   and taking the maximum is the reading that flatters. `cap` is now the largest size such
   that it and every measured size below it clear.
+
+## Signed-off-by
+
+
+Cristiano Solarino <cs0lar>, 2026-09-02, charter-8fb7f2095506

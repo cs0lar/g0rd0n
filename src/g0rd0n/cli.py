@@ -5,11 +5,13 @@ Nine commands, and no more. `version` says what is installed, `config` says what
 rebuilds the projection, `charter` shows the current question and puts it into the kernel,
 `evidence` searches the literature and audits g0rd0n's own unsourced numbers against it,
 `portfolio` says what is being bet on and what is worth spending on next, and `bench` prints
-the chartered task families and lets a person score one instance by hand.
+the chartered task families, lets a person score one instance by hand, and says what this
+machine could read a joule with.
 
 `bench` is there because AGENTS.md §Phase 8 asks for a bench "small enough that one person can
 verify it is not lying", and the cheapest way to verify a checker is to read one instance and
-grade it yourself.
+grade it yourself. `bench meters` is the same idea one layer down: the cheapest way to find
+out whether a measured energy result is possible on a machine is to ask before running on it.
 
 `evidence` is the first command that reaches the open network, and the first that costs
 anything — wall-clock, against a wager, through the ledger like everything else.
@@ -40,8 +42,9 @@ from g0rd0n.cortex.wager import WagerError
 from g0rd0n.evidence import seeds
 from g0rd0n.evidence.channel import EvidenceError
 from g0rd0n.evidence.citation import UnresolvableCitation
-from g0rd0n.instruments import fetch, search, tasks
+from g0rd0n.instruments import fetch, meter, search, tasks
 from g0rd0n.instruments.fetch import FetchError
+from g0rd0n.instruments.meter import MeterError
 from g0rd0n.instruments.search import SearchError
 from g0rd0n.instruments.tasks import TaskError
 from g0rd0n.kernel import KernelError
@@ -89,9 +92,12 @@ PORTFOLIO_ACTIONS = ("seed", "status", "next")
 
 #: `bench families` lists what CHARTER.md charters, with the version each is measured under;
 #: `bench sample` prints one instance exactly as an arm would be shown it, and grades an
-#: `--answer` with the family's own checker. Neither runs an arm and neither spends: this is
-#: the affordance that lets a person check the bench by hand before trusting a curve from it.
-BENCH_ACTIONS = ("families", "sample")
+#: `--answer` with the family's own checker; `bench meters` says what energy instruments this
+#: machine has and what the Charter will let each of them be used for. None runs an arm and
+#: none spends: this is the affordance that lets a person check the bench by hand before
+#: trusting a curve from it — and `meters` is where they find out whether a measured energy
+#: result is possible here at all, before a run rather than after one.
+BENCH_ACTIONS = ("families", "sample", "meters")
 
 
 class Check(NamedTuple):
@@ -175,7 +181,7 @@ def build_parser() -> argparse.ArgumentParser:
             subparser.add_argument(
                 "action",
                 choices=BENCH_ACTIONS,
-                help="list the chartered families, or print and score one instance",
+                help="list the families, score one instance, or list this machine's meters",
             )
             subparser.add_argument(
                 "--family", default=tasks.FAMILIES[0].slug, help="which family to sample from"
@@ -250,7 +256,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (WagerError, AllocationError) as exc:
         print(f"portfolio: {exc}", file=sys.stderr)
         return 1
-    except TaskError as exc:
+    except (TaskError, MeterError) as exc:
         print(f"bench: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
@@ -407,12 +413,15 @@ def _print_allocation(allocation: Next | Exhausted) -> None:
 
 
 def _bench(action: str, slug: str, size: int, seed: int, answer: str | None) -> int:
-    """List the chartered families, or print one instance and optionally grade an answer.
+    """List the chartered families, print one instance and grade it, or list the meters.
 
-    Neither action runs an arm, reaches the network, or touches the kernel. The Charter's
-    `cap` needs a meter and a budget beside it; what this prints is the questions and the
-    checker, which is the half a person can verify unaided.
+    No action runs an arm, reaches the network, or touches the kernel. The Charter's `cap`
+    needs a meter and a budget beside it; what this prints is the questions, the checker, and
+    what the machine could read a joule with — the half a person can verify unaided.
     """
+    if action == "meters":
+        return _meters()
+
     if action == "families":
         for chartered in tasks.FAMILIES:
             print(f"{chartered.slug}  {chartered.version}  {chartered.what}")
@@ -432,6 +441,32 @@ def _bench(action: str, slug: str, size: int, seed: int, answer: str | None) -> 
     if answer is not None:
         print(f"answer          {answer!r}")
         print(f"score           {chartered.score(instance, answer):.4f}")
+    return 0
+
+
+def _meters() -> int:
+    """Say what this machine can read a joule with, and what the Charter allows it for.
+
+    Deliberately blunt about the usual answer. CHARTER.md §Energy instrument makes a wall-plug
+    meter the primary and counters "never alone", so a machine with no meter plugged into it
+    cannot produce a measured energy result at all — only analytic estimates, labelled as
+    such. Finding that out here costs nothing; finding it out after a run costs the run.
+    """
+    found = meter.counters()
+    for counter in found:
+        unusable = counter.unusable()
+        state = f"unreadable: {unusable}" if unusable else "readable"
+        print(f"{counter.instrument.name:<20} {meter.Role.SECONDARY}  {state}")
+        print(f"{'':20} sees {counter.instrument.covers}")
+    if not found:
+        print("no on-die counters found under /sys/class/powercap")
+    print()
+    print(f"{'wall-plug meter':<20} {meter.Role.PRIMARY}     none configured on this machine")
+    print()
+    print("CHARTER.md §Energy instrument: counters are reported alongside a wall-plug meter")
+    print("and never instead of one, so with no primary instrument every energy figure this")
+    print("bench can produce is an analytic estimate, labelled `estimated`, and every")
+    print("comparison it appears in is flagged as mixed.")
     return 0
 
 

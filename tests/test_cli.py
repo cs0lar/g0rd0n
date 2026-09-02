@@ -245,7 +245,7 @@ def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
     assert cli.CHARTER_ACTIONS == ("show", "commit")
     assert cli.EVIDENCE_ACTIONS == ("search", "seed", "audit")
     assert cli.PORTFOLIO_ACTIONS == ("seed", "status", "next")
-    assert cli.BENCH_ACTIONS == ("families", "sample")
+    assert cli.BENCH_ACTIONS == ("families", "sample", "meters")
 
 
 def test_bench_prints_an_instance_and_grades_an_answer_by_hand(
@@ -272,6 +272,27 @@ def test_bench_prints_an_instance_and_grades_an_answer_by_hand(
 
     assert cli.main([*argv, "--seed", "0", "--answer", " ".join(str(x) for x in state)]) == 0
     assert "score           1.0000" in capsys.readouterr().out
+
+
+def test_bench_meters_says_whether_this_machine_can_measure_a_joule_at_all(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The same affordance one layer down, and on most machines the answer is no.
+
+    CHARTER.md §Energy instrument makes a wall-plug meter the primary and counters "never
+    alone", so a machine with nothing plugged into it can produce analytic estimates and
+    nothing else. Asked here rather than discovered at the end of a measured run.
+
+    Deliberately not asserting which counters are present: that differs per machine, and the
+    machine that has none is the case this command exists for.
+    """
+    config_path = write_config(tmp_path)
+
+    assert cli.main(["--config", str(config_path), "bench", "meters"]) == 0
+    printed = capsys.readouterr().out
+    assert "wall-plug meter" in printed
+    assert "none configured on this machine" in printed
+    assert "flagged as mixed" in printed
 
 
 def test_bench_refuses_a_family_nobody_chartered(
