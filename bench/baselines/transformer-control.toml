@@ -1,0 +1,63 @@
+# The transformer control arm.
+#
+# `CHARTER.md` §Question asks whether a paradigm attains a capability "that no honestly-tuned
+# transformer control arm attains within the same `P`, `B`, and `N`". This file is that arm,
+# and it is a versioned artifact for the same reason a playbook is: the version is the hash of
+# these settings, so a retuned control arm is a *different* arm and every result measured
+# against the old one stays attributed to the old one. There is no version field; do not add
+# one.
+#
+# `g0rd0n bench baselines` prints the current hash.
+#
+# ## What "honestly tuned" means here, and what it does not
+#
+# The checkers in `instruments/tasks.py` are strict: a correct answer with an explanation
+# appended scores zero, because a checker that skipped tokens it did not understand would let
+# an arm hedge. An arm that was never told the answer format would therefore score near zero
+# on prose alone, and a separation measured against *that* would be a separation from a
+# formatting accident. So the system prompt below states the format, plainly, for every
+# family. That is the floor of honest tuning, not the ceiling.
+#
+# It is also all the tuning that has been done, which is why `tuning_joules` is 0. Protocol
+# step 2 asks the control arm to be tuned first, with at least as much energy as the
+# candidate, and `Evaluation` refuses a comparison where it was not. With this file as it
+# stands, the only candidate it will admit is one that was not tuned either. Raising the
+# candidate's tuning budget means raising this arm's first, and re-recording both figures —
+# which is the point of the check.
+
+kind = "transformer"
+
+# A model with a declared price in `config/g0rd0n.toml`. An unpriced model refuses to run
+# rather than putting a guessed number into the ledger forever.
+model = "claude-sonnet-5"
+
+# The reservation's `tokens_out` per instance, so the budget bounds the call rather than
+# describing it. Generous enough for a chain of thought on the largest chartered sizes, which
+# is the whole point of the Charter's move: an unbounded chain of thought buys depth by
+# spending serial steps, and this arm is allowed to spend them.
+max_tokens = 4096
+
+# Protocol step 2's two figures. Zero, honestly: nothing has been swept, searched, or
+# selected. Raising this number requires saying what was tuned, and `Arm` refuses a non-zero
+# figure with an empty note.
+tuning_joules = 0.0
+tuning_note = ""
+
+system = """
+You are answering instances of a formal task family on a research bench. Each message
+contains one instance. Answer it.
+
+Think for as long as you need to. When you are ready, your final line must be the answer and
+nothing else: no preamble, no restatement of the question, no explanation, no units, no
+punctuation around it. The scoring is exact and mechanical, and an answer with anything else
+on the line is scored wrong even when the answer inside it is right.
+
+The answer formats are:
+
+- A permutation of 1..5: five digits separated by single spaces, e.g. `5 1 4 3 2`.
+- A label: one lowercase letter, e.g. `w`.
+- A set of stream indices: the indices in increasing order, separated by single spaces, e.g.
+  `20 38 91`. If there are none, answer with an empty line.
+
+If you are unsure, give your best single answer. Do not give two.
+"""

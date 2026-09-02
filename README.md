@@ -30,12 +30,28 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 8b — The meter and what it licenses.** `g0rd0n` can price work, remember it with a
-source attached, show it to a human as a navigable argument, run an agent, compose several
-into a graph, put a question to a person on the same budget, go and get evidence, open a Wager
-on what it finds, decide which Wager is worth running next, generate the questions that would
-settle one and say what a score on them means — and now say what a joule figure is allowed to
-be quoted as. The arms and the run loop that commits a result are Phase 8c.
+**Phase 8c — The arms and the protocol.** `g0rd0n` can price work, remember it with a source
+attached, show it to a human as a navigable argument, run an agent, compose several into a
+graph, put a question to a person on the same budget, go and get evidence, open a Wager on
+what it finds, decide which Wager is worth running next, generate the questions that would
+settle one, say what a score on them means, say what a joule figure is allowed to be quoted as
+— and now run two arms against one pre-registered instance set and record what, if anything,
+was shown.
+
+**Nothing spends without a registration, all the way down.** `attempt` takes a `Reservation`
+and `evaluate` takes a `Registration`, so the chain from a model call back to a wager that
+passed the falsifiability gate has no string in it anybody could have typed. That closes the
+gap ADR 0010 recorded at the end of Phase 7: a result cannot physically be produced before the
+wager that priced it. An arm is the *subject* of the experiment rather than a cell doing
+g0rd0n's work, so it commits nothing — the per-instance records live in the result, and the
+argument graph gets one `measures` carrying both arms' config hashes.
+
+**There is no evaluation with one arm**, and the baseline has to be a transformer. A candidate
+tuned harder than the control arm is refused, on the figures each arm declares inside its own
+version hash — so the way to pass that check is to tune the control arm, not to edit a number
+after the run. A separation may be claimed only when the 95% interval on the `cap` margin
+excludes zero *and* both arms stayed inside their budget; anything else is `inconclusive`,
+which is a verdict and is recorded as one.
 
 **A joule figure carries its error bar and its basis, or it does not exist.** A measurement
 comes out of a calibrated session and nothing else: a session with no calibration record
@@ -181,6 +197,7 @@ uv run g0rd0n bench families             # the three chartered task families, an
 uv run g0rd0n bench sample --family T2   # one instance as an arm sees it, and what it is checked against
 uv run g0rd0n bench sample --answer "5 1 4 2 3"   # ...graded by the family's own checker
 uv run g0rd0n bench meters               # what this machine could read a joule with, if anything
+uv run g0rd0n bench baselines            # the control arm's versioned config, and its hash
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,

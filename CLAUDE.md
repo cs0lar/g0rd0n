@@ -11,7 +11,7 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–8b are built; Phase 8c (the arms and the run loop) is next.** The package is
+**Phases 0–8c are built; Phase 9 (the Formal Cell) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
@@ -35,14 +35,17 @@ Not Do Yet**.
   (what a Cell is: four fields of data, no base class), `model.py` (the `Model` seam, the
   hand-rolled Anthropic provider, and the network allowlist), `runtime.py` (`run`: reserve,
   converse, check, record, settle), `human.py` (a person as an instrument: question, deadline,
-  fallback), `graph.py` (composition, as a dict). Depends on `config`, `ledger`, and `kernel`.
+  fallback), `graph.py` (composition, as a dict), `arm.py` (a system *under evaluation*: a
+  versioned config and the loop that asks it every instance). Depends on `config`, `ledger`,
+  `kernel`, and `instruments`.
 
 - `cortex/` — `charter.py` (the Question Engine: what a charter must fix, how one supersedes
   another, and the definitions file it names by hash), `wager.py` (the Wager, the
   falsifiability gate, and pre-registration), `portfolio.py` (the nine candidate families,
   their priors, and what would kill each), `allocator.py` (cheapest falsifier first, and the
-  stopping rules). Depends on `config`, `kernel`, `ledger`, `evidence.channel` for `rivals`,
-  `combine` and `sources_for`, and `cells.playbook` for `version_of`.
+  stopping rules), `protocol.py` (the matched-capability protocol: two arms, one instance set,
+  one `measures`). Depends on `config`, `kernel`, `ledger`, `evidence.channel` for `rivals`,
+  `combine` and `sources_for`, `cells` for the arms, and `instruments` for the bench.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
   prose), `tasks.py` (the three chartered task families: a generator, a size and a checker,
@@ -405,6 +408,38 @@ no network, no kernel, and on this machine no meter either. Seven things that ca
 `g0rd0n bench meters` reports that this machine has no primary instrument and cannot read RAPL
 either (root-only since CVE-2020-8694), so every energy figure it can produce today is an
 `estimated` one. That is the correct answer, not a gap. See ADR 0014.
+
+## The arms and the protocol
+
+`cells/arm.py` is a system *under evaluation*; `cortex/protocol.py` runs two of them against
+one instance set and commits one `measures`. `bench/baselines/transformer-control.toml` is the
+control arm, a versioned artifact reviewed in a diff like a playbook. Seven things:
+
+- **An arm commits nothing.** It is the *subject* of the experiment, not a Cell doing g0rd0n's
+  work — `runtime.run` would intern 240 transcripts and commit 240 `plays` edges per
+  evaluation. The per-instance records live in the `Attempt`; the argument graph gets one edge.
+- **`attempt` takes a `Reservation`, `evaluate` takes a `Registration`.** That is ADR 0010's
+  open gap closed: the chain from a model call back to a registered wager has no string in it
+  a caller could have typed. A hand-built `Registration` still builds an `Evaluation` and then
+  fails at `settle`, which is what keeps most of the tests kernel-free.
+- **A failed model call fails the attempt; it does not score zero.** A refused instance is the
+  arm failing; a dead endpoint is g0rd0n failing. Settlement is in a `finally`.
+- **The control arm runs first**, under one reservation for both arms. If the money runs out
+  midway, the arm that got measured is the one that would otherwise be quietly dropped.
+- **`separated` needs the margin *and* both arms inside their budget.** `margin` bootstraps
+  `cap` from scores alone, so an arm that outscored the control by overspending gives a
+  positive margin and a `cap` of `None`. Without the budget clause the evaluation would claim
+  a separation for an arm whose own `Result` reports no capability.
+- **A candidate significantly *behind* the control still reports `inconclusive`**, because the
+  Charter says "anything else is `inconclusive`". Recorded in ADR 0015 as a criticism a
+  superseding Charter could quote, not fixed by mapping it to `refutes`.
+- **No CLI command runs an evaluation.** All four `bench` actions read. 240 model calls is
+  unattended spend, and the thing that starts one should be a registered wager.
+
+Two known weaknesses, both written down rather than patched: `W` on an arm behind an HTTP API
+times the round trip and not the computation, and `margin`'s content-hash seeding is *not*
+covered by a test — `cap` is an ordinal, so an unseeded RNG leaves the suite green. See ADR
+0015's failure modes.
 
 Building the bench found two defects in the Charter itself, and both were fixed the only way
 they can be — by superseding it. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`**
