@@ -1,8 +1,9 @@
 # Getting Started with g0rd0n
 
 This tutorial explains the system from the outside in: reproduce a result,
-understand the research loop, invoke a resource, make its cost visible, and see
-how bounded self-improvement fits around the loop.
+understand the research loop, invoke a resource, make its cost visible, protect
+an experiment from hindsight and evaluation leakage, and see how bounded
+self-improvement fits around the loop.
 
 g0rd0n is currently a Python research toolkit, not a hosted service. Its default
 adapters and experiments are deterministic fixtures so orchestration policies
@@ -60,7 +61,8 @@ Every cycle follows the same causal chain:
 
 ```text
 question -> assumptions -> hypotheses -> predictions
-         -> experiment/proof -> observations -> results
+         -> frozen method -> approved execution -> isolated evaluation
+         -> observations -> results
          -> adversarial review -> belief update -> next question
 ```
 
@@ -175,7 +177,45 @@ supersession, and provenance through replaceable in-memory or `knk` adapters.
 The Obsidian projection creates deterministic human-readable notes while
 preserving marked human-owned regions.
 
-## 7. How self-improvement works
+## 7. Run an integrity-controlled research cycle
+
+For work intended to support a scientific claim, the research process and the
+evaluator have deliberately different responsibilities:
+
+1. Write a results-free `MethodProtocol` containing the mechanism,
+   configuration, assumptions, expected result, falsifiers, and compliance
+   declarations.
+2. Freeze the protocol. Its canonical hash identifies what was proposed before
+   execution; revisions supersede it instead of editing history.
+3. Hash the executable source tree and obtain approval for that exact protocol,
+   code hash, reviewer, and policy version.
+4. Run integrity preflight checks over the protocol, code, data lineage, and
+   permissions. Execute only the approved tree and retain its receipt.
+5. Submit the artifact reference—not researcher-produced predictions—to the
+   isolated evaluator. Optimization may guide iteration, validation may select
+   a candidate, and the untouched test may confirm it once. Capability and
+   safety gates can veto an aggregate improvement.
+6. Append the finding with its method, execution, evaluation, cost, failures,
+   and interpretation. Failed and invalid findings remain visible. Suspicious
+   findings are quarantined from the integrity-controlled leaderboard rather
+   than deleted.
+7. Start later sessions from a deterministic briefing built from the mission,
+   safe literature, valid findings, unresolved disagreements, and remaining
+   budget. Final-test information is excluded.
+
+Separate-process evaluation is a demonstrable boundary, not automatically a
+secure one. Consequential deployments must run the evaluator under a distinct
+identity and expose only an IPC client to research code. Human monitor judgments
+are evidence requiring independent confirmation; deterministic isolation and
+binding checks remain primary.
+
+Implementation details and examples are in
+[`method-protocol.md`](method-protocol.md),
+[`isolated-evaluation.md`](isolated-evaluation.md),
+[`shared-research-memory.md`](shared-research-memory.md), and
+[`research-integrity.md`](research-integrity.md).
+
+## 8. How self-improvement works
 
 Self-improvement changes research strategy, never the mission or success
 criteria. `AdaptiveResourceTopology` represents allocation policy and topology
@@ -196,7 +236,7 @@ real-world research improvement. Until credible held-out episodes show an
 advantage, the simpler fixed governor remains the default. This is a key safety
 invariant: adaptation earns deployment through evidence and remains reversible.
 
-## 8. Bounded autonomous programs
+## 9. Bounded autonomous programs
 
 `ResearchProgramSpec` combines a question, candidate hypotheses, ordered
 experiments, multidimensional budget, retry policy, and human-review gates.
@@ -210,7 +250,53 @@ the declared escalation policy. Every exit produces the same audit report:
 question, hypotheses, experiments, evidence, claim changes, failures, costs,
 unresolved uncertainty, and best next question.
 
-## 9. Where to go next
+## 10. Supported harness defaults and rollback
+
+Phase 20 tested the imported harness controls with paired cumulative and
+leave-one-out ablations, selected mechanisms using only registered selection
+workloads, and then checked the decision on untouched held-out workloads. The
+supported configuration is [`config/harness-defaults.json`](../config/harness-defaults.json):
+
+```text
+fixed governor
++ frozen protocols
++ isolated evaluation
++ shared survey and findings forum
++ fresh-session briefings
++ integrity monitoring
+```
+
+This does not enable adaptive resource topology. It keeps fixed orchestration
+and wraps research runs in the five supported controls. Reproduce the seeded
+integrity comparison and adoption study with:
+
+```bash
+uv run python -m g0rd0n.integrity \
+  benchmarks/integrity/phase-19-suite.json \
+  config/integrity-policy.json
+
+uv run python -m g0rd0n.ablation \
+  benchmarks/ablation/phase-20-workloads.json \
+  config/harness-defaults.json \
+  --repository-root .
+```
+
+The ablation command emits the selected mechanisms, component evidence,
+held-out metrics, sensitivity results, merge-gate status, and an empty-mechanism
+rollback configuration that reproduces the fixed-governor baseline. Rollback
+changes future policy only; it never deletes protocols, findings, integrity
+flags, reviews, or appeals.
+
+The committed study improves seeded held-out valid discovery from 0.167 to
+0.500, rejects 12 integrity violations, avoids four duplicate runs, and lowers
+modelled total cost from 2400 to 2344 units. These results validate harness
+mechanics on registered fixtures. They do not demonstrate AGI capability,
+open-ended research improvement, or transfer to a real discovery campaign. See
+[`harness-ablation.md`](harness-ablation.md) and the
+[`adoption ADR`](adr/0002-adopt-validated-research-harness-controls.md) for the
+decision and renewal criteria.
+
+## 11. Where to go next
 
 - Reproduce toy baselines with
   `uv run python -m g0rd0n.evaluation run <manifest>`.
