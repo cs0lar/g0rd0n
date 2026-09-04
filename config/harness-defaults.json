@@ -1,0 +1,12 @@
+{
+  "id": "supported-default",
+  "governor_policy": "fixed",
+  "mechanisms": [
+    "frozen_protocols",
+    "evaluation_isolation",
+    "shared_survey_forum",
+    "fresh_sessions",
+    "integrity_monitoring"
+  ],
+  "idea_origin": "automated"
+}

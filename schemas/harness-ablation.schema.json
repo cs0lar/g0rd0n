@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.dev/schemas/harness-ablation.schema.json",
+  "title": "Harness ablation specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "bootstrap_samples", "bootstrap_seed", "per_workload_budget", "decision_thresholds", "mechanism_profiles", "workload_groups"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "bootstrap_samples": {"type": "integer", "minimum": 100},
+    "bootstrap_seed": {"type": "integer", "minimum": 0},
+    "per_workload_budget": {"$ref": "#/$defs/budget"},
+    "decision_thresholds": {
+      "type": "object",
+      "required": ["progress_ci_lower", "minimum_integrity_violations_avoided", "minimum_duplicates_avoided", "maximum_cost_ratio"],
+      "properties": {
+        "progress_ci_lower": {"type": "number", "minimum": 0},
+        "minimum_integrity_violations_avoided": {"type": "integer", "minimum": 1},
+        "minimum_duplicates_avoided": {"type": "integer", "minimum": 1},
+        "maximum_cost_ratio": {"type": "number", "minimum": 1}
+      }
+    },
+    "mechanism_profiles": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["mechanism", "cost_units", "wall_time_ms", "human_minutes", "complexity_points"],
+        "properties": {
+          "mechanism": {"enum": ["frozen_protocols", "evaluation_isolation", "shared_survey_forum", "fresh_sessions", "integrity_monitoring"]},
+          "cost_units": {"type": "number", "minimum": 0},
+          "wall_time_ms": {"type": "integer", "minimum": 0},
+          "human_minutes": {"type": "number", "minimum": 0},
+          "complexity_points": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "workload_groups": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["id", "split", "source", "family", "count", "defects", "has_valid_candidate", "transfer_score", "base_cost_units", "base_wall_time_ms", "base_human_minutes"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "split": {"enum": ["selection", "held_out"]},
+          "source": {"enum": ["synthetic", "historical_replay"]},
+          "family": {"type": "string", "minLength": 1},
+          "count": {"type": "integer", "minimum": 1},
+          "defects": {"type": "array", "uniqueItems": true, "items": {"enum": ["protocol_drift", "evaluation_leakage", "capability_regression", "duplicated_work", "context_contamination", "integrity_violation"]}},
+          "has_valid_candidate": {"type": "boolean"},
+          "transfer_score": {"type": "number", "minimum": 0, "maximum": 1},
+          "base_cost_units": {"type": "number", "minimum": 0},
+          "base_wall_time_ms": {"type": "integer", "minimum": 0},
+          "base_human_minutes": {"type": "number", "minimum": 0},
+          "historical_artifact": {"type": "string"},
+          "historical_sha256": {"$ref": "#/$defs/digest"},
+          "human_idea": {"type": "object"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "budget": {
+      "type": "object",
+      "required": ["cost_units", "wall_time_ms", "human_minutes"],
+      "properties": {
+        "cost_units": {"type": "number", "minimum": 0},
+        "wall_time_ms": {"type": "integer", "minimum": 0},
+        "human_minutes": {"type": "number", "minimum": 0}
+      }
+    },
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
