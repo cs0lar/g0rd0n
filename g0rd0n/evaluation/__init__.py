@@ -16,11 +16,26 @@ from .energy import (
     project_power,
 )
 from .harness import BenchmarkHarness, BenchmarkSystem, TrialMeasurement
+from .isolation import (
+    AggregateRule,
+    BenchmarkRole,
+    BenchmarkScore,
+    EvaluationPurpose,
+    EvaluationReport,
+    EvaluationRequest,
+    GateKind,
+    GateVerdict,
+    IsolatedEvaluator,
+    SelectionRecord,
+)
 from .manifest import BaselineManifest, BenchmarkSpec, TaskFamily
 
 __all__ = [
+    "AggregateRule",
     "BaselineManifest",
     "BenchmarkHarness",
+    "BenchmarkRole",
+    "BenchmarkScore",
     "BenchmarkSpec",
     "BenchmarkSystem",
     "Comparison",
@@ -28,11 +43,18 @@ __all__ = [
     "EnergyProfile",
     "EnergyReading",
     "EnergyUncertainty",
+    "EvaluationPurpose",
+    "EvaluationReport",
+    "EvaluationRequest",
+    "GateKind",
+    "GateVerdict",
+    "IsolatedEvaluator",
     "LinuxRaplEnergyMeter",
     "MeasurementMethod",
     "MetricDirection",
     "MetricSpec",
     "ScalingProjection",
+    "SelectionRecord",
     "SyntheticEnergyMeter",
     "SystemBoundary",
     "energy_pareto_front",
