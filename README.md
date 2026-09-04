@@ -84,6 +84,7 @@ Core packages are organized by responsibility:
 | `g0rd0n/programs/` | Resumable, human-gated research programs |
 | `g0rd0n/methods/` | Frozen proposals bound to reviewed executable artifacts |
 | `g0rd0n/memory/` | Durable survey, findings forum, leaderboard, and fresh-session briefing |
+| `g0rd0n/integrity/` | Versioned controls, trajectory monitoring, quarantine, and appeals |
 | `g0rd0n/proofs/` | Formal claims, proof artifacts, and verification |
 | `g0rd0n/campaigns/` | Pre-registered mission-facing investigations |
 
