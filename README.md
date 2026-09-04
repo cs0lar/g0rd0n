@@ -80,6 +80,7 @@ Core packages are organized by responsibility:
 | `g0rd0n/budget/` | Preflight limits and durable cost accounting |
 | `g0rd0n/governor/` | Question, experiment, adversarial, and allocation policies |
 | `g0rd0n/evaluation/` | Reproducible baselines, statistics, and energy accounting |
+| `g0rd0n/evaluation/isolation.py` | Aggregate-only private evaluation and regression gates |
 | `g0rd0n/programs/` | Resumable, human-gated research programs |
 | `g0rd0n/methods/` | Frozen proposals bound to reviewed executable artifacts |
 | `g0rd0n/proofs/` | Formal claims, proof artifacts, and verification |

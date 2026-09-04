@@ -29,6 +29,7 @@ class MissionSpecTests(unittest.TestCase):
                 "budget.schema.json",
                 "campaign-preregistration.schema.json",
                 "energy-profile.schema.json",
+                "isolated-evaluation-suite.schema.json",
                 "ledger-event.schema.json",
                 "method-protocol.schema.json",
                 "mission.schema.json",

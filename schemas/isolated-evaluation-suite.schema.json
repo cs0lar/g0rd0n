@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.local/schemas/isolated-evaluation-suite.schema.json",
+  "title": "PrivateEvaluationSuite",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["campaign_id", "aggregate_rule", "benchmarks"],
+  "properties": {
+    "campaign_id": {"type": "string", "minLength": 1},
+    "aggregate_rule": {"const": "geometric_mean_positive_headroom"},
+    "benchmarks": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["id", "role", "baseline", "optimum", "measurements"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "role": {
+            "enum": ["optimization", "validation", "test", "capability_gate", "safety_gate"]
+          },
+          "baseline": {"type": "number"},
+          "optimum": {"type": "number"},
+          "gate_kind": {"enum": ["capability", "safety"]},
+          "minimum_headroom": {"type": "number"},
+          "measurements": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mean", "confidence_interval_95"],
+              "properties": {
+                "mean": {"type": "number"},
+                "confidence_interval_95": {
+                  "type": "array",
+                  "prefixItems": [{"type": "number"}, {"type": "number"}],
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"role": {"enum": ["capability_gate", "safety_gate"]}}},
+            "then": {"required": ["gate_kind", "minimum_headroom"]}
+          }
+        ]
+      }
+    }
+  }
+}
