@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.dev/schemas/harness-defaults.schema.json",
+  "title": "Supported harness defaults",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "governor_policy", "mechanisms", "idea_origin"],
+  "properties": {
+    "id": {"const": "supported-default"},
+    "governor_policy": {"const": "fixed"},
+    "mechanisms": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["frozen_protocols", "evaluation_isolation", "shared_survey_forum", "fresh_sessions", "integrity_monitoring"]}
+    },
+    "idea_origin": {"const": "automated"}
+  }
+}

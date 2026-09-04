@@ -29,6 +29,8 @@ class MissionSpecTests(unittest.TestCase):
                 "budget.schema.json",
                 "campaign-preregistration.schema.json",
                 "energy-profile.schema.json",
+                "harness-ablation.schema.json",
+                "harness-defaults.schema.json",
                 "isolated-evaluation-suite.schema.json",
                 "integrity-adversarial-suite.schema.json",
                 "integrity-event.schema.json",
