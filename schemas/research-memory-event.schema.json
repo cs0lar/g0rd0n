@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://g0rd0n.dev/schemas/research-memory-event.schema.json",
+  "title": "Research memory event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sequence", "kind", "payload", "previous_hash", "event_hash"],
+  "properties": {
+    "sequence": {"type": "integer", "minimum": 0},
+    "kind": {
+      "enum": [
+        "literature_added",
+        "proposal_added",
+        "duplicate_rejected",
+        "finding_added",
+        "review_added"
+      ]
+    },
+    "payload": {"type": "object"},
+    "previous_hash": {"$ref": "#/$defs/digest"},
+    "event_hash": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

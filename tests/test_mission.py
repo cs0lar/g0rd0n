@@ -37,6 +37,7 @@ class MissionSpecTests(unittest.TestCase):
                 "proof-bundle.schema.json",
                 "research-program.schema.json",
                 "research-object.schema.json",
+                "research-memory-event.schema.json",
                 "resource.schema.json",
             },
         )
