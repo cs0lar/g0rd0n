@@ -1,12 +1,13 @@
 """The command line: the only place that reads a config file and the only place that exits.
 
-Nine commands, and no more. `version` says what is installed, `config` says what was loaded,
+Ten commands, and no more. `version` says what is installed, `config` says what was loaded,
 `doctor` says what is missing, `cost` says what was spent and on which claim, `vault`
 rebuilds the projection, `charter` shows the current question and puts it into the kernel,
 `evidence` searches the literature and audits g0rd0n's own unsourced numbers against it,
-`portfolio` says what is being bet on and what is worth spending on next, and `bench` prints
+`portfolio` says what is being bet on and what is worth spending on next, `bench` prints
 the chartered task families, lets a person score one instance by hand, says what this machine
-could read a joule with, and shows the control arm's versioned config.
+could read a joule with, and shows the control arm's versioned config, and `formal` puts the
+shipped separation claims into the kernel as conjectures and says how far each has got.
 
 `bench` is there because AGENTS.md §Phase 8 asks for a bench "small enough that one person can
 verify it is not lying", and the cheapest way to verify a checker is to read one instance and
@@ -42,10 +43,11 @@ from g0rd0n import __version__, vault
 from g0rd0n.cells import arm
 from g0rd0n.cells.arm import ArmError
 from g0rd0n.config import Config, ConfigError, load
-from g0rd0n.cortex import allocator, portfolio
+from g0rd0n.cortex import allocator, formal, portfolio
 from g0rd0n.cortex import charter as charter_document
 from g0rd0n.cortex.allocator import AllocationError, Board, Exhausted, Next
 from g0rd0n.cortex.charter import CharterError
+from g0rd0n.cortex.formal import FormalError
 from g0rd0n.cortex.wager import WagerError
 from g0rd0n.evidence import seeds
 from g0rd0n.evidence.channel import EvidenceError
@@ -76,6 +78,7 @@ COMMANDS: dict[str, str] = {
     "evidence": "search primary literature, and audit the seed numbers against it",
     "portfolio": "show the candidate families, and what is worth spending on next",
     "bench": "show the task families, the meters, and the control arm; score one instance",
+    "formal": "conjecture the shipped separation claims, or say what stage each has reached",
 }
 
 #: `vault` takes exactly one action today. It is spelled out rather than implied so that
@@ -110,6 +113,12 @@ PORTFOLIO_ACTIONS = ("seed", "status", "next")
 #: it. None of the four runs an arm and none spends: an evaluation is `cortex.protocol`'s,
 #: under a registered wager, and deliberately has no shell command that starts it.
 BENCH_ACTIONS = ("families", "sample", "meters", "baselines")
+
+#: `formal seed` conjectures the shipped separation claims under the Charter's question;
+#: `formal status` reads each one's stage back from the kernel, with its contingency on the
+#: same screen. Neither advances a claim past `conjecture`: a sketch is an argument somebody
+#: writes and a machine-checked proof needs a checker, and there is no command for either.
+FORMAL_ACTIONS = ("seed", "status")
 
 
 class Check(NamedTuple):
@@ -189,6 +198,12 @@ def build_parser() -> argparse.ArgumentParser:
                 choices=PORTFOLIO_ACTIONS,
                 help="seed the families, show where they stand, or rank what to run next",
             )
+        if name == "formal":
+            subparser.add_argument(
+                "action",
+                choices=FORMAL_ACTIONS,
+                help="conjecture the shipped claims, or read back the stage each has reached",
+            )
         if name == "bench":
             subparser.add_argument(
                 "action",
@@ -255,6 +270,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _portfolio(config, args.action)
         if args.command == "bench":
             return _bench(args.action, args.family, args.size, args.seed, args.answer)
+        if args.command == "formal":
+            return _formal(config, args.action)
         return _report(doctor(config))
     except BudgetExhausted as exc:
         print(f"budget: {exc}", file=sys.stderr)
@@ -270,6 +287,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     except (TaskError, MeterError, ArmError) as exc:
         print(f"bench: {exc}", file=sys.stderr)
+        return 1
+    except FormalError as exc:
+        print(f"formal: {exc}", file=sys.stderr)
         return 1
     except (LedgerError, JournalError) as exc:
         print(f"ledger: {exc}", file=sys.stderr)
@@ -349,6 +369,26 @@ def _print_audit(done: seeds.Audited) -> None:
         print("disagrees:")
         for seed, why in done.unverified:
             print(f"  {seed.hypothesis.name}\n      {why}")
+
+
+def _formal(config: Config, action: str) -> int:
+    """Conjecture the shipped claims under the Charter's question, or read their stages back.
+
+    `seed` needs the question in the kernel, and `conjecture` refuses otherwise — a claim hung
+    off an uncommitted question creates the question by side effect. `status` prints every
+    shipped claim with its stage *and* its contingency, because the stage alone is the half of
+    the answer that flatters.
+    """
+    question = charter_document.load(config.charter_path, config.charter_definitions).ref
+    with connect_kernel(config) as bridge:
+        if action == "seed":
+            committed = formal.commit(bridge, question)
+            print(f"conjectured {len(committed)} of {len(formal.CLAIMS)} claims under {question}")
+        stages = [(claim, formal.stage_of(bridge, claim)) for claim in formal.CLAIMS]
+    for claim, stage in stages:
+        print(formal.render(claim, stage))
+        print()
+    return 0
 
 
 def _portfolio(config: Config, action: str) -> int:

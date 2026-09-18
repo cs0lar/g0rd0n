@@ -30,13 +30,28 @@ See [`AGENTS.md`](AGENTS.md) for the full constitution and roadmap, and
 
 ## Status
 
-**Phase 8c — The arms and the protocol.** `g0rd0n` can price work, remember it with a source
-attached, show it to a human as a navigable argument, run an agent, compose several into a
-graph, put a question to a person on the same budget, go and get evidence, open a Wager on
-what it finds, decide which Wager is worth running next, generate the questions that would
-settle one, say what a score on them means, say what a joule figure is allowed to be quoted as
-— and now run two arms against one pre-registered instance set and record what, if anything,
-was shown.
+**Phase 9 — The Formal Cell.** `g0rd0n` can price work, remember it with a source attached,
+show it to a human as a navigable argument, run an agent, compose several into a graph, put a
+question to a person on the same budget, go and get evidence, open a Wager on what it finds,
+decide which Wager is worth running next, generate the questions that would settle one, say
+what a joule figure is allowed to be quoted as, run two arms against one pre-registered
+instance set — and now record a complexity-theoretic separation claim precisely enough that
+nobody can report it as more than it is.
+
+**A claim cannot shed a contingency, skip a stage, or be called a theorem before it is one.**
+An S1 claim records its complexity classes, its uniformity, what it pins, and the open problems
+it is contingent on — all inside its identity hash, so dropping "unless `NC¹ ⊆ L-uniform
+TC⁰`" makes a different claim, and every edge about it repeats the contingency. It moves
+`conjecture` → `proof sketch` → `machine-checked`, in order, each stage carried by the edge that
+*is* it; the sketch pins the formal statement a checker would have to prove. A checker is
+trusted for its axiom report and nothing else: a proof with `sorry` in it is refused, and a
+proof that assumes an open problem the claim never declared is refused as the overclaim it is.
+"Theorem" is said for exactly one case — machine-checked and unconditional. No proof checker is
+installed or shipped, so the third stage is reachable only from a test; the one claim shipped
+is a conjecture about T1, and it is contingent on the *stronger* of two ways of saying
+`TC⁰ ≠ NC¹`, because the transformer bound it rests on is logspace-uniform.
+
+**Phase 8c** made two arms runnable against one pre-registered instance set.
 
 **Nothing spends without a registration, all the way down.** `attempt` takes a `Reservation`
 and `evaluate` takes a `Registration`, so the chain from a model call back to a wager that
@@ -198,6 +213,9 @@ uv run g0rd0n bench sample --family T2   # one instance as an arm sees it, and w
 uv run g0rd0n bench sample --answer "5 1 4 2 3"   # ...graded by the family's own checker
 uv run g0rd0n bench meters               # what this machine could read a joule with, if anything
 uv run g0rd0n bench baselines            # the control arm's versioned config, and its hash
+
+uv run g0rd0n formal seed                # conjecture the shipped separation claims
+uv run g0rd0n formal status              # the stage each has reached, and what it is contingent on
 ```
 
 A cell is data, not a class: a versioned playbook, a tool allowlist, a typed output schema,

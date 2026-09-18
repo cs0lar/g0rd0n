@@ -240,12 +240,14 @@ def test_the_cli_surface_is_exactly_what_this_phase_declares() -> None:
         "evidence",
         "portfolio",
         "bench",
+        "formal",
     }
     assert cli.VAULT_ACTIONS == ("rebuild",)
     assert cli.CHARTER_ACTIONS == ("show", "commit")
     assert cli.EVIDENCE_ACTIONS == ("search", "seed", "audit")
     assert cli.PORTFOLIO_ACTIONS == ("seed", "status", "next")
     assert cli.BENCH_ACTIONS == ("families", "sample", "meters", "baselines")
+    assert cli.FORMAL_ACTIONS == ("seed", "status")
 
 
 def test_bench_prints_an_instance_and_grades_an_answer_by_hand(
@@ -412,3 +414,51 @@ def test_no_command_is_a_usage_error() -> None:
         cli.main([])
 
     assert exit_info.value.code == 2
+
+
+def test_formal_needs_a_charter_before_it_needs_a_kernel(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A separation claim is conjectured under a question, so no question is the first refusal.
+
+    Same shape as `portfolio`: refused before the kernel subprocess starts, so this runs on a
+    machine with no `knk`.
+    """
+    config_path = write_config(tmp_path)
+
+    assert cli.main(["--config", str(config_path), "formal", "status"]) == 1
+    assert "charter:" in capsys.readouterr().err
+
+
+def test_formal_seed_conjectures_the_shipped_claims_and_status_says_so(
+    tmp_path: Path, knk_server: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """End to end against a real `knk`: commit a charter, seed, and read the stage back.
+
+    Seeding twice commits once. What `status` prints is the stage *and* the contingency on the
+    same screen, because the stage alone is the half of the answer that flatters — and it
+    never prints "theorem", because nothing here is one.
+    """
+    config_path = write_config(tmp_path)
+    text = config_path.read_text(encoding="utf-8")
+    config_path.write_text(
+        text.replace(f'mcp_server = "{tmp_path / "mcp_server"}"', f'mcp_server = "{knk_server}"'),
+        encoding="utf-8",
+    )
+    _write_charter(tmp_path, sign=True)
+    assert cli.main(["--config", str(config_path), "charter", "commit"]) == 0
+    capsys.readouterr()
+
+    assert cli.main(["--config", str(config_path), "formal", "seed"]) == 0
+    first = capsys.readouterr().out
+    assert "conjectured 1 of 1 claims" in first
+    assert "[conjecture — no proof held]" in first
+    assert "CONTINGENT on nc1_not_in_l_uniform_tc0" in first
+
+    assert cli.main(["--config", str(config_path), "formal", "seed"]) == 0
+    assert "conjectured 0 of 1 claims" in capsys.readouterr().out
+
+    assert cli.main(["--config", str(config_path), "formal", "status"]) == 0
+    status = capsys.readouterr().out
+    assert "[conjecture — no proof held]" in status
+    assert "theorem" not in status
