@@ -1,11 +1,12 @@
 """Instruments: tools that return results and never commit assertions.
 
-Six modules. `fetch` opens sockets and owns the network allowlist; `search` queries arXiv and
+Seven modules. `fetch` opens sockets and owns the network allowlist; `search` queries arXiv and
 can only hand back papers with identifiers; `tasks` is the three chartered task families, each
 a generator, a size and a checker hashed together; `capability` turns the scores those
 checkers produce into the Charter's `cap`; `meter` says what read a joule and how far off it
-was; `bench` says what a joule figure and a `cap` are allowed to be reported as. The prover
-and the sandbox arrive with their own phases.
+was; `bench` says what a joule figure and a `cap` are allowed to be reported as; `prover` is
+the seam a proof checker arrives through, and the reading of its axiom report that tells a
+proof from an assumption. The sandbox arrives with its own phase.
 
 The rule that defines this layer is AGENTS.md §6: **an instrument returns a result, and a
 Cell commits it.** Nothing here imports the bridge, and nothing here decides what is true —
@@ -68,6 +69,14 @@ from g0rd0n.instruments.meter import (
     estimated,
     session,
 )
+from g0rd0n.instruments.prover import (
+    HOLES,
+    TRUSTED,
+    Checked,
+    Checker,
+    ProverError,
+    unadmitted,
+)
 from g0rd0n.instruments.search import (
     DEFAULT_LIMIT,
     Arxiv,
@@ -90,12 +99,16 @@ __all__ = [
     "CONFIDENCE",
     "DEFAULT_LIMIT",
     "FAMILIES",
+    "HOLES",
     "MAX_BYTES",
     "MINIMUM",
+    "TRUSTED",
     "Arxiv",
     "Basis",
     "Budget",
     "Calibration",
+    "Checked",
+    "Checker",
     "Comparison",
     "Curve",
     "Expenditure",
@@ -112,6 +125,7 @@ __all__ = [
     "MeterError",
     "NetworkRefused",
     "Point",
+    "ProverError",
     "Rapl",
     "Result",
     "Role",
@@ -133,4 +147,5 @@ __all__ = [
     "interval",
     "margin",
     "session",
+    "unadmitted",
 ]

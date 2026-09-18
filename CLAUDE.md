@@ -11,15 +11,15 @@ Not Do Yet**.
 
 ## Repository state
 
-**Phases 0–8c are built; Phase 9 (the Formal Cell) is next.** The package is
+**Phases 0–9 are built; Phase 10 (the Referee) is next.** The package is
 `src/g0rd0n/`:
 
 - `config.py` — the only reader of the config file.
 - `content.py` — `version_of`: a thing's version is the hash of what it is. Depends on
   nothing, so every layer can reach it.
 - `cli.py` — `version`, `config`, `doctor`, `cost`, `vault rebuild`, `charter show|commit`,
-  `evidence search|seed|audit`, `portfolio seed|status|next`, `bench families|sample|meters`,
-  and nothing else.
+  `evidence search|seed|audit`, `portfolio seed|status|next`,
+  `bench families|sample|meters|baselines`, `formal seed|status`, and nothing else.
 - `ledger/` — `cost.py` (the six-dimensional `Cost`), `journal.py` (the append-only record
   and its replay), `ledger.py` (`reserve`/`spend`/`settle` and the three caps), `report.py`
   (the derived view). Depends on `config` and nothing else in `g0rd0n`.
@@ -44,14 +44,16 @@ Not Do Yet**.
   falsifiability gate, and pre-registration), `portfolio.py` (the nine candidate families,
   their priors, and what would kill each), `allocator.py` (cheapest falsifier first, and the
   stopping rules), `protocol.py` (the matched-capability protocol: two arms, one instance set,
-  one `measures`). Depends on `config`, `kernel`, `ledger`, `evidence.channel` for `rivals`,
+  one `measures`), `formal.py` (S1 separation claims: their contingencies, and the stage each
+  has reached). Depends on `config`, `kernel`, `ledger`, `evidence.channel` for `rivals`,
   `combine` and `sources_for`, `cells` for the arms, and `instruments` for the bench.
 - `instruments/` — `fetch.py` (the only socket to anywhere but the model endpoint, and the
   owner of the network allowlist), `search.py` (arXiv, returning citable identifiers and never
   prose), `tasks.py` (the three chartered task families: a generator, a size and a checker,
   hashed together), `capability.py` (the score curve, its bootstrap interval, and `cap`),
   `meter.py` (what read a joule, its calibration, and its error bar), `bench.py` (what a joule
-  figure and a `cap` are allowed to be reported as). Returns results and commits nothing.
+  figure and a `cap` are allowed to be reported as), `prover.py` (the seam a proof checker
+  arrives through, and the reading of its axiom report). Returns results and commits nothing.
   Depends on `config` and `content` and nothing else in `g0rd0n`.
 - `evidence/` — `citation.py` (resolve: fetch, check, hash, intern), `channel.py` (commit:
   dedup, corroborate, preserve disagreement, retract), `seeds.py` (the five unsourced numbers
@@ -239,13 +241,14 @@ Four things about `cortex/charter.py` that look arbitrary and are not:
 
 `commit` refuses an unsigned charter and refuses to commit the same one twice. See ADR 0007.
 
-**The chain of `refines` edges only exists for charters that were committed**, and today none
-were. `charter-8fb7f2095506` supersedes `charter-329c9f00e917`, which supersedes
-`agents-md-seed-framing`, and both charters are unsigned — so if only the current one is ever
-signed, its `refines` edges point at a question the kernel holds nothing else about, and the
-six criticisms that retired the seed framing never become edges at all. **A supersession is
+**The chain of `refines` edges only exists for charters that were committed.**
+`charter-8fb7f2095506` supersedes `charter-329c9f00e917`, which supersedes
+`agents-md-seed-framing`. Both are signed and were committed oldest first (2026-09-02), so the
+kernel holds all ten `refines` edges — the six criticisms that retired the seed framing as
+well as the four that retired the first charter. Committing only the newest would have left
+its edges pointing at a question the kernel holds nothing else about. **A supersession is
 committed oldest first**, and the procedure is in
-[`docs/charter/signing.md`](docs/charter/signing.md), rehearsed against a throwaway kernel.
+[`docs/charter/signing.md`](docs/charter/signing.md).
 
 Two things about that which are easy to get wrong. Signing does **not** change a charter's
 version — the signature is the one section outside the hash — so a superseded charter
@@ -441,13 +444,46 @@ times the round trip and not the computation, and `margin`'s content-hash seedin
 covered by a test — `cap` is an ordinal, so an unseeded RNG leaves the suite green. See ADR
 0015's failure modes.
 
+## The Formal Cell
+
+`cortex/formal.py` records S1 separation claims; `instruments/prover.py` is the seam a proof
+checker arrives through. Six things that look arbitrary and are not:
+
+- **The stage is carried by which edge exists.** Conjecture is `question hypothesises
+  hypothesis:<id>`; proof sketch is `hypothesis:<id> cites source:<id>-sketch-<v>`;
+  machine-checked is `result:<id>-checked-<v> corroborates hypothesis:<id>`. Each edge's
+  provenance is headed by its stage, and `stage_of` reads it back from the kernel alone. It is
+  *not* knk's status — proof stage and belief are orthogonal, and belief is Phase 10's. Do not
+  add a predicate for it. Retracting the sketch edge steps a claim back with no special case.
+- **A contingency is inside the claim's id**, as a Wager's kill criterion is inside its. No
+  edit drops one and keeps the id, and every edge repeats `label_of_contingency` in its
+  provenance. That is "labelled as contingent, forever".
+- **`OPEN` is a closed table of open problems**, keyed by the axiom name a formal proof would
+  use. Two claims contingent on one problem must spell it one way.
+- **Stages are reached in order, and the sketch pins the formal statement.** `checked` needs
+  the checker to have proved *exactly* that statement, against the sketch the kernel holds.
+- **A checker is trusted for its axiom report and nothing else.** `sorryAx` is refused
+  outright; the checker's foundational axioms are ignored; every other axiom must be one of
+  the claim's declared contingencies, or the proof assumed something the claim never admitted.
+  `native_decide`'s `Lean.ofReduceBool` is deliberately not foundational.
+- **"Theorem" is said exactly once**: machine-checked *and* unconditional. A machine-checked
+  contingent result is a "conditional result", and the checked edge names the Lean
+  *declaration* rather than calling it a theorem.
+
+No checker is shipped — there is no Lean here, for the reason 8b wrote no wall-meter driver —
+so `machine-checked` is reachable only from a test, and the Lean axiom names in `prover.py`
+have never been run against real output. The shipped claim, `T1_WITHOUT_CHAIN_OF_THOUGHT`, is a
+**conjecture** contingent on `nc1_not_in_l_uniform_tc0`, not the familiar `tc0_ne_nc1`: the
+transformer bound in the kernel is logspace-uniform, so the weaker-sounding assumption would
+understate what the claim needs. Its sketch waits for Barrington's theorem to enter the kernel.
+See ADR 0016.
+
 Building the bench found two defects in the Charter itself, and both were fixed the only way
 they can be — by superseding it. **`charter-8fb7f2095506` supersedes `charter-329c9f00e917`**
 with four criticisms: the T1 worked example gave the composition with one step dropped, it
 left the composition convention unstated (which is why the error survived), its §Task family
 prose described a generator nobody could write, and `cap` took a maximum where it wanted a
-prefix. ADR 0013 carries the amendments. Neither charter is signed, so neither is in the
-kernel — see the note under *The Charter* about what that costs.
+prefix. ADR 0013 carries the amendments. Both charters are now signed and in the kernel.
 
 ## Working rules that differ from ordinary repos
 

@@ -1,14 +1,16 @@
 """The Cortex: question framing, the Wager, allocation, and later the meta-loop.
 
-Four modules. `charter` is the Question Engine of AGENTS.md §Phase 5: it decides whether a
+Six modules. `charter` is the Question Engine of AGENTS.md §Phase 5: it decides whether a
 document is a well-posed version of the task, versions it by its own substance, and puts it
 into the kernel as a question. `wager` is AGENTS.md §Phase 7's half of the same chain: it
 decides whether a candidate is something that can be spent against, versions it the same way,
 and refuses to let money move until the kernel has been told in advance how the spend could
 lose. `portfolio` is the field being bet on — nine candidate families, their priors, and what
 would make us stop funding each. `allocator` decides what to spend on next, and when to stop
-and hand the question back to `charter`. Nothing here knows about MCP framing, and nothing
-below here knows what a Charter is.
+and hand the question back to `charter`. `protocol` runs two arms against one pre-registered
+instance set and commits the one `measures` that earns. `formal` records S1 separation claims
+with their contingencies attached and keeps a conjecture from being reported as a theorem.
+Nothing here knows about MCP framing, and nothing below here knows what a Charter is.
 
 Deletion criterion: this package holds the wager that the question g0rd0n is working on is a
 named, versioned, signed artifact, and that everything spent descends from it through
@@ -46,6 +48,16 @@ from g0rd0n.cortex.charter import (
     load,
     parse,
 )
+from g0rd0n.cortex.formal import (
+    CLAIMS,
+    OPEN,
+    FormalError,
+    Pinned,
+    Separation,
+    Sketch,
+    Stage,
+    stage_of,
+)
 from g0rd0n.cortex.portfolio import CONTROL_ARM, FAMILIES, Family, surveys
 from g0rd0n.cortex.wager import (
     GATE,
@@ -64,10 +76,12 @@ from g0rd0n.cortex.wager import (
 )
 
 __all__ = [
+    "CLAIMS",
     "CONTROL_ARM",
     "ELEMENTS",
     "FAMILIES",
     "GATE",
+    "OPEN",
     "PATIENCE",
     "SECTIONS",
     "AllocationError",
@@ -77,12 +91,17 @@ __all__ = [
     "Definition",
     "Exhausted",
     "Family",
+    "FormalError",
     "Next",
     "NotPreregistered",
     "Outcome",
+    "Pinned",
     "Ranked",
     "Recorded",
     "Registration",
+    "Separation",
+    "Sketch",
+    "Stage",
     "Standing",
     "Unfalsifiable",
     "Verdict",
@@ -99,5 +118,6 @@ __all__ = [
     "record",
     "register",
     "reserve",
+    "stage_of",
     "surveys",
 ]
